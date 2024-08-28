@@ -8,16 +8,16 @@ app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
 
 DB_HOST = "localhost"
-DB_NAME = "sampledb"
+DB_NAME = "lms"
 DB_USER = "postgres"
-DB_PASS = "Indonesia09"
+DB_PASS = "postgres"
  
 conn = psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
 
 @app.route('/login/', methods=['GET', 'POST'])
 def login():
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-   
+    
     # Check if "username" and "password" POST requests exist (user submitted form)
     if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
         username = request.form['username']
@@ -32,22 +32,34 @@ def login():
         if account:
             password_rs = account['password']
             print(password_rs)
-            # If account exists in users table in out database
+            # If account exists in users table in our database
             if check_password_hash(password_rs, password):
                 # Create session data, we can access this data in other routes
                 session['loggedin'] = True
                 session['id'] = account['id']
                 session['username'] = account['username']
-                # Redirect to home page
-                return redirect(url_for('home'))
+
+                # Fetch user role
+                user_role = account['role']  # Assuming 'role' is a column in your users table
+                
+                # Redirect based on user role
+                if user_role == 'teacher':
+                    return redirect(url_for('guru_dashboard'))
+                elif user_role == 'student':
+                    return redirect(url_for('siswa_dashboard'))
+                else:
+                    # Handle unexpected roles, perhaps log an error or redirect to a default page
+                    flash('Unknown user role')
+                    return redirect(url_for('home'))
             else:
-                # Account doesnt exist or username/password incorrect
+                # Account doesn't exist or username/password incorrect
                 flash('Incorrect username/password')
         else:
-            # Account doesnt exist or username/password incorrect
+            # Account doesn't exist or username/password incorrect
             flash('Incorrect username/password')
  
     return render_template('auth/login.html')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
