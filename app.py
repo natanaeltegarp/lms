@@ -8,9 +8,9 @@ app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
 
 DB_HOST = "localhost"
-DB_NAME = "sampledb"
+DB_NAME = "lms"
 DB_USER = "postgres"
-DB_PASS = "Indonesia09"
+DB_PASS = "postgres"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -38,7 +38,18 @@ def login():
                     session['loggedin'] = True
                     session['id'] = account['id']
                     session['username'] = account['username']
-                    return redirect(url_for('home'))
+                    # Fetch user role
+                    user_role = account['role']  # Assuming 'role' is a column in your users table
+                
+                    # Redirect based on user role
+                    if user_role == 'teacher':
+                        return redirect(url_for('guru_dashboard'))
+                    elif user_role == 'student':
+                        return redirect(url_for('siswa_dashboard'))
+                    else:
+                        # Handle unexpected roles, perhaps log an error or redirect to a default page
+                        flash('Unknown user role')
+                        return redirect(url_for('home'))
                 else:
                     flash('Incorrect username or password')
  
@@ -95,6 +106,14 @@ def register():
 @app.route('/home')
 def home():
     return 'Welcome to the home page!'
+
+@app.route('/guru/dashboard')
+def guru_dashboard():
+    return render_template('guru/guru_dashboard.html')
+
+@app.route('/siswa/dashboard')
+def siswa_dashboard():
+    return render_template('siswa/siswa_dashboard.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

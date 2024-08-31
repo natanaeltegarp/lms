@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Kuis Kelas - {{ selected_class.name }}</title>
+</head>
+<body>
+    <h1>Kuis Kelas {{ selected_class.name }}</h1>
+    
+    <ul>
+        {% for quiz in quizzes %}
+            <li>{{ quiz }}</li>
+        {% endfor %}
+    </ul>
+    
+    <!-- Button untuk mengarahkan ke halaman tambah kuis -->
+    <script>
+        function add_quiz(){
+            window.location.href="{{ url_for('add_quiz', class_id=selected_class.id) }}"
+        } 
+    </script>
+    <button onclick="add_quiz()">Tambah Kuis</button>
+
+    <br>
+    <a href="{{ url_for('class_detail', class_id=selected_class.id) }}">Kembali ke Halaman Kelas</a>
+</body>
+</html>
