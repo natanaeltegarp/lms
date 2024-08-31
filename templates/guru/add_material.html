@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Tambah Materi - {{ selected_class.name }}</title>
+</head>
+<body>
+    <h1>Tambah Materi Baru untuk {{ selected_class.name }}</h1>
+    <form action="{{ url_for('add_material', class_id=selected_class.id) }}" method="post">
+        <input type="text" name="material_name" placeholder="Nama Materi" required>
+        <button type="submit">Tambah Materi</button>
+    </form>
+    <br>
+    <a href="{{ url_for('class_materials', class_id=selected_class.id) }}">Kembali ke Daftar Materi</a>
+</body>
+</html>
