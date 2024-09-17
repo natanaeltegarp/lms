@@ -14,7 +14,31 @@
 </head>
 <body>
     <h1>Dashboard Guru</h1>
-    <h2>Kelas yang Anda Buka</h2>
-
+    <table>
+        <thead>
+            <tr>
+                <th>ID Kelas</th>
+                <th>Nama Mapel</th>
+                <th>Jenjang Kelas</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for kelas in classes %}
+            <tr>
+                <td>{{ kelas.id_kelas }}</td>
+                <td>{{ kelas.nama_mapel }}</td>
+                <td>{{ kelas.kelas }}</td>
+                <td><a href="{{ url_for('class_detail', class_id=kelas.id_kelas) }}">Lihat Detail</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script>
+        function add_class(){
+            window.location.href="{{ url_for('add_class') }}"
+        } 
+    </script>
+    <button onclick="add_class()">Tambah Kelas</button>
 </body>
 </html>
