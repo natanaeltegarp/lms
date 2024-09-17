@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet"
+        id="bootstrap-css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <title>Tambah Kelas</title>
 </head>
 <body>
     <h1>Tambah Kelas Baru</h1>
     <form action="{{ url_for('add_class') }}" method="post">
-        <input type="text" name="class_name" placeholder="Nama Kelas" required>
+        <input type="text" name="nama_mapel" placeholder="Nama Mapel" required>
+        <input type="text" name="kelas" placeholder="Kelas" required>
         <button type="submit">Tambah Kelas</button>
     </form>
-    <br>
-    <a href="{{ url_for('dashboard') }}">Kembali ke Dashboard</a>
+    <a href="{{ url_for('guru_dashboard') }}">Kembali ke Dashboard</a>
 </body>
 </html>

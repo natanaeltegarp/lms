@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
@@ -10,22 +9,19 @@
         id="bootstrap-css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-    <title>Detail Kelas - {{ selected_class.nama_mapel }}</title>
+    <title>Daftar Enrollment - {{ selected_class.nama_mapel }}</title>
 </head>
 <body>
-    <h1>Detail Kelas: {{ selected_class.nama_mapel }}</h1>
+    <h1>Daftar Enrollment Kelas: {{ selected_class.nama_mapel }}</h1>
 
     <ul>
-        <li>Jenjang Kelas: {{ selected_class.kelas }}</li>
-    </ul>
-    
-    <h3>Navigasi</h3>
-    <ul>
-        <li><a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}">Kuis</a></li>
-        <li><a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}">Daftar Enrollment</a></li>
+        {% for user in peserta %}
+        <li>{{ user.fullname }} ({{ user.email }})</li>
+        {% else %}
+        <li>Tidak ada peserta yang terdaftar</li>
+        {% endfor %}
     </ul>
 
-    <a href="{{ url_for('guru_dashboard') }}">Kembali ke Dashboard</a>
-
+    <a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">Kembali ke Detail Kelas</a>
 </body>
 </html>

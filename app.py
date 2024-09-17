@@ -2,10 +2,16 @@ from flask import Flask, request, session, redirect, url_for, render_template, f
 import psycopg2 
 import psycopg2.extras
 import re 
+import secrets
+from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
 DB_NAME = "sampledb"
@@ -14,6 +20,34 @@ DB_PASS = "Indonesia09"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
+
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    fullname = db.Column(db.String(100), nullable=False)
+    username = db.Column(db.String(50), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    role = db.Column(db.String(10), nullable=False)
+    nisn_or_nuptk = db.Column(db.String(50), nullable=False)
+
+class kelas_ajar(db.Model):
+    __tablename__='kelas_ajar'
+    id_kelas = db.Column(db.Integer, primary_key=True)
+    nama_mapel = db.Column(db.String(255), nullable=False)
+    kelas = db.Column(db.String(5), nullable=False)
+
+class enrollment(db.Model):
+    __tablename__='enrollment'
+    id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), primary_key=True, nullable=False)
+    id_user = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True, nullable=False)
+    token = db.Column(db.String(20), nullable=False)
+
+class kuis(db.Model):
+    __tablename__='kuis'
+    id_kuis = db.Column(db.Integer, primary_key=True)
+    id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
+    judul_kuis = db.Column(db.String(255), nullable=False)
 
 @app.route('/')
 def index():
@@ -251,7 +285,73 @@ def reset_password(user_id):
 
 @app.route('/guru/dashboard')
 def guru_dashboard():
-    return render_template('guru/guru_dashboard.html')
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    kelas_list = db.session.query(kelas_ajar).join(enrollment).filter(enrollment.id_user == user_id).all()
+    return render_template('guru/guru_dashboard.html', classes=kelas_list)
+
+@app.route('/guru/add_class', methods=['GET', 'POST'])
+def add_class():
+    if request.method == 'POST':
+        nama_mapel = request.form['nama_mapel']
+        kelas = request.form['kelas']
+        id_user = session['id']
+
+
+        if nama_mapel and kelas and id_user:
+            new_class = kelas_ajar(nama_mapel=nama_mapel, kelas=kelas)
+            db.session.add(new_class)
+            db.session.commit()
+
+            id_kelas = new_class.id_kelas
+            random_token = secrets.token_hex(4)
+            token = f'{id_kelas}{random_token}'
+
+            enrollments = enrollment(id_kelas=id_kelas, id_user=id_user, token=token)
+            db.session.add(enrollments)
+            db.session.commit()
+            return redirect(url_for('guru_dashboard'))
+        else:
+            return "Nama mapel dan kelas tidak boleh kosong", 400
+    return render_template('guru/add_class.html')
+
+@app.route('/guru/class/<int:class_id>')
+def class_detail(class_id):
+    selected_class = kelas_ajar.query.get(class_id)
+    if selected_class:
+        return render_template('guru/class_detail.html', selected_class=selected_class)
+    else:
+        return "Kelas tidak ditemukan", 404
+
+@app.route('/guru/class/<int:class_id>/quizzes')
+def class_quizzes(class_id):
+    quizzes = kuis.query.filter_by(id_kelas=class_id).all()
+    selected_class = kelas_ajar.query.get(class_id)
+    return render_template('guru/class_quizzes.html', quizzes=quizzes, selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/add_quiz', methods=['GET', 'POST'])
+def add_quiz(class_id):
+    if 'id' not in session:
+        return redirect(url_for('login'))
+    
+    selected_class = kelas_ajar.query.get(class_id)
+    if request.method == 'POST':
+        judul_kuis = request.form['judul_kuis']
+        kuis_baru = kuis(id_kelas=class_id, judul_kuis=judul_kuis)
+        db.session.add(kuis_baru)
+        db.session.commit()
+         
+        return redirect(url_for('class_quizzes', class_id=class_id))
+    return render_template('guru/add_quiz.html', selected_class=selected_class) 
+
+@app.route('/guru/class/<int:class_id>/enrollment')
+def class_enrollments(class_id):
+    enrollments = enrollment.query.filter_by(id_kelas=class_id).all()
+    peserta = [User.query.get(enrollment.id_user) for enrollment in enrollments]
+    selected_class = kelas_ajar.query.get(class_id)
+    return render_template('guru/class_enrollments.html', peserta=peserta, selected_class=selected_class)
 
 @app.route('/siswa/dashboard')
 def siswa_dashboard():
