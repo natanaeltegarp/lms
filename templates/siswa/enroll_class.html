@@ -1,0 +1,43 @@
+{% extends 'siswa/siswa_dashboard.html' %}
+
+{% block title %}
+Enroll Kelas
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Enroll Kelas</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('siswa_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Enroll Kelas</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Masukkan Token Enrollment</h3>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('enroll_class') }}" method="post">
+                    <div class="form-group">
+                        <label for="enrollment_token">Token Enrollment</label>
+                        <input type="text" id="enrollment_token" name="enrollment_token" class="form-control"
+                            placeholder="Masukkan token kelas" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enroll</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

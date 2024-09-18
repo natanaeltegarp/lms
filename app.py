@@ -1,14 +1,14 @@
 from flask import Flask, request, session, redirect, url_for, render_template, flash
-import psycopg2 
-import psycopg2.extras
-import re 
-import secrets
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+import psycopg2 
+import psycopg2.extras
+import secrets
+import re
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -25,26 +25,27 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     fullname = db.Column(db.String(100), nullable=False)
-    username = db.Column(db.String(50), nullable=False)
+    username = db.Column(db.String(50), nullable=False, unique=True)
     password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(10), nullable=False)
     nisn_or_nuptk = db.Column(db.String(50), nullable=False)
+    is_accepted = db.Column(db.Boolean, default=False)
 
-class kelas_ajar(db.Model):
-    __tablename__='kelas_ajar'
+class KelasAjar(db.Model):
+    __tablename__ = 'kelas_ajar'
     id_kelas = db.Column(db.Integer, primary_key=True)
     nama_mapel = db.Column(db.String(255), nullable=False)
     kelas = db.Column(db.String(5), nullable=False)
 
-class enrollment(db.Model):
-    __tablename__='enrollment'
+class Enrollment(db.Model):
+    __tablename__ = 'enrollment'
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), primary_key=True, nullable=False)
     id_user = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True, nullable=False)
     token = db.Column(db.String(20), nullable=False)
 
-class kuis(db.Model):
-    __tablename__='kuis'
+class Kuis(db.Model):
+    __tablename__ = 'kuis'
     id_kuis = db.Column(db.Integer, primary_key=True)
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
@@ -92,43 +93,46 @@ def login():
             flash('Please enter both username and password.')
             return render_template('auth/login.html')
 
-        with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-                cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
-                account = cursor.fetchone()
+        user = User.query.filter_by(username=username).first()
 
-                if account and check_password_hash(account['password'], password):
-                    session['loggedin'] = True
-                    session['id'] = account['id']
-                    session['username'] = account['username']
-                    user_role = account['role']
-                    is_accepted = account['is_accepted']
-                    
-                    # Redirect based on user role
-                    if user_role == 'teacher':
-                        if not is_accepted:
-                            flash('Your account is pending approval by an admin.')
-                            return redirect(url_for('home'))
-                        return redirect(url_for('guru_dashboard'))
-                    elif user_role == 'student':
-                        return redirect(url_for('siswa_dashboard'))
-                    else:
-                        flash('Unknown user role')
-                        return redirect(url_for('home'))
-                else:
-                    flash('Incorrect username or password')
+        if user and check_password_hash(user.password, password):
+            session['loggedin'] = True
+            session['id'] = user.id
+            session['username'] = user.username
+            user_role = user.role
+            is_accepted = user.is_accepted
+            
+            # Redirect based on user role
+            if user_role == 'teacher':
+                if not is_accepted:
+                    flash('Your account is pending approval by an admin.')
+                    return redirect(url_for('home'))
+                return redirect(url_for('guru_dashboard'))
+            elif user_role == 'student':
+                return redirect(url_for('siswa_dashboard'))
+            else:
+                flash('Unknown user role')
+                return redirect(url_for('home'))
+        else:
+            flash('Incorrect username or password')
 
     return render_template('auth/login.html')
 
 @app.route('/logoutAdmin')
 def logoutAdmin():
-    # Menghapus data sesi pengguna
     session.pop('loggedin', None)
     session.pop('id', None)
     session.pop('username', None)
     flash('You have been logged out successfully.')
     return redirect(url_for('loginAdmin'))
 
+@app.route('/logout')
+def logout():
+    session.pop('loggedin', None)
+    session.pop('id', None)
+    session.pop('username', None)
+    flash('You have been logged out successfully.')
+    return redirect(url_for('login'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -141,7 +145,6 @@ def register():
         role = request.form.get('role')
         additional_info = request.form.get('additional_info')
 
-        # Validasi data
         if password != retype_password:
             flash('Passwords do not match!')
         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
@@ -155,26 +158,14 @@ def register():
         elif not additional_info:
             flash(f'Please provide the { "NISN" if role == "student" else "NUPTK" }!')
         else:
-            try:
-                with get_db_connection() as conn:
-                    with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-                        cursor.execute('SELECT * FROM users WHERE username = %s', (username,))
-                        account = cursor.fetchone()
-
-                        if account:
-                            flash('Account already exists!')
-                        else:
-                            _hashed_password = generate_password_hash(password)
-                            cursor.execute(
-                                "INSERT INTO users (fullname, username, password, email, role, nisn_or_nuptk) VALUES (%s, %s, %s, %s, %s, %s)",
-                                (fullname, username, _hashed_password, email, role, additional_info)
-                            )
-                            conn.commit()
-                            flash('You have successfully registered!')
-            except Exception as e:
-                flash(f'An error occurred: {str(e)}')
-                if conn is not None:
-                    conn.rollback()  # Roll back the transaction on error
+            if User.query.filter_by(username=username).first():
+                flash('Account already exists!')
+            else:
+                hashed_password = generate_password_hash(password)
+                new_user = User(fullname=fullname, username=username, password=hashed_password, email=email, role=role, nisn_or_nuptk=additional_info)
+                db.session.add(new_user)
+                db.session.commit()
+                flash('You have successfully registered!')
 
     return render_template('auth/register.html')
 
@@ -184,46 +175,32 @@ def home():
 
 @app.route('/admin')
 def admin_dashboard():
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            cursor.execute("SELECT id, username, email, role, is_accepted FROM users")
-            users = cursor.fetchall()
+    users = User.query.all()
     return render_template('admin/manage_roles.html', users=users)
-
 
 @app.route('/admin/manage_roles', methods=['GET', 'POST'])
 def manage_roles():
     if request.method == 'POST':
-        # Mengambil user_id dari form
         user_id = request.form.get('user_id')
         action_type = request.form.get('action_type')
 
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-                    if action_type == 'approve':
-                        # Approve the user
-                        cursor.execute('UPDATE users SET is_accepted = TRUE WHERE id = %s', (user_id,))
-                        flash('User approved successfully!')
-                    elif action_type == 'update_role':
-                        # Update user role
-                        new_role = request.form.get('new_role')
-                        cursor.execute(
-                            'UPDATE users SET role = %s, is_accepted = %s WHERE id = %s',
-                            (new_role, False if new_role == 'teacher' else True, user_id)
-                        )
-                        flash('User role updated successfully!')
+        user = User.query.get(user_id)
+        if not user:
+            flash('User not found.')
+            return redirect(url_for('admin_dashboard'))
 
-                    conn.commit()
-        except Exception as e:
-            flash(f'An error occurred: {str(e)}')
+        if action_type == 'approve':
+            user.is_accepted = True
+            flash('User approved successfully!')
+        elif action_type == 'update_role':
+            new_role = request.form.get('new_role')
+            user.role = new_role
+            user.is_accepted = False if new_role == 'teacher' else True
+            flash('User role updated successfully!')
 
-    # Fetch all users data to display
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            cursor.execute("SELECT id, username, email, role, is_accepted FROM users")
-            users = cursor.fetchall()
+        db.session.commit()
 
+    users = User.query.all()
     return render_template('admin/manage_roles.html', users=users)
 
 @app.route('/admin/manage_users')
@@ -231,57 +208,30 @@ def manage_users():
     search = request.args.get('search')
     role_filter = request.args.get('role_filter')
     
-    # Base query untuk mengambil data user
-    query = "SELECT id, username, fullname, email, role, nisn_or_nuptk FROM users WHERE 1=1"
-    params = []
-    
-    # Tambahkan kondisi pencarian
+    query = User.query
     if search:
-        # Gunakan ILIKE untuk case-insensitive search pada PostgreSQL
-        query += " AND (username ILIKE %s OR email ILIKE %s OR nisn_or_nuptk ILIKE %s)"
         search_param = f"%{search}%"
-        params.extend([search_param, search_param, search_param])
+        query = query.filter(User.username.ilike(search_param) | User.email.ilike(search_param) | User.nisn_or_nuptk.ilike(search_param))
     
-    # Tambahkan filter berdasarkan role jika ada
     if role_filter:
-        query += " AND role = %s"
-        params.append(role_filter)
+        query = query.filter(User.role == role_filter)
     
-    # Eksekusi query
-    with get_db_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-            cursor.execute(query, tuple(params))
-            users = cursor.fetchall()
-    
+    users = query.all()
     return render_template('admin/manage_users.html', users=users)
-
 
 @app.route('/admin/reset_password/<int:user_id>', methods=['POST'])
 def reset_password(user_id):
-    try:
-        with get_db_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cursor:
-                # Ambil username berdasarkan ID user
-                cursor.execute('SELECT username FROM users WHERE id = %s', (user_id,))
-                user = cursor.fetchone()
-                
-                if user:
-                    # Tentukan password default: username + "12345"
-                    default_password = user['username'] + '12345'
-                    # Enkripsi password menggunakan generate_password_hash
-                    hashed_password = generate_password_hash(default_password)
-                    
-                    # Update password dalam database
-                    cursor.execute('UPDATE users SET password = %s WHERE id = %s', (hashed_password, user_id))
-                    conn.commit()
-                    flash(f"Password for user '{user['username']}' has been reset to the default.")
-                else:
-                    flash('User not found.')
-    except Exception as e:
-        flash(f'An error occurred: {str(e)}')
+    user = User.query.get(user_id)
+    if user:
+        default_password = user.username + '12345'
+        hashed_password = generate_password_hash(default_password)
+        user.password = hashed_password
+        db.session.commit()
+        flash(f"Password for user '{user.username}' has been reset to the default.")
+    else:
+        flash('User not found.')
 
     return redirect(url_for('manage_users'))
-
 
 @app.route('/guru/dashboard')
 def guru_dashboard():
@@ -289,7 +239,7 @@ def guru_dashboard():
         return redirect(url_for('login'))
 
     user_id = session['id']
-    kelas_list = db.session.query(kelas_ajar).join(enrollment).filter(enrollment.id_user == user_id).all()
+    kelas_list = KelasAjar.query.join(Enrollment).filter(Enrollment.id_user == user_id).all()
     return render_template('guru/guru_dashboard.html', classes=kelas_list)
 
 @app.route('/guru/add_class', methods=['GET', 'POST'])
@@ -299,9 +249,8 @@ def add_class():
         kelas = request.form['kelas']
         id_user = session['id']
 
-
         if nama_mapel and kelas and id_user:
-            new_class = kelas_ajar(nama_mapel=nama_mapel, kelas=kelas)
+            new_class = KelasAjar(nama_mapel=nama_mapel, kelas=kelas)
             db.session.add(new_class)
             db.session.commit()
 
@@ -309,8 +258,8 @@ def add_class():
             random_token = secrets.token_hex(4)
             token = f'{id_kelas}{random_token}'
 
-            enrollments = enrollment(id_kelas=id_kelas, id_user=id_user, token=token)
-            db.session.add(enrollments)
+            new_enrollment = Enrollment(id_kelas=id_kelas, id_user=id_user, token=token)
+            db.session.add(new_enrollment)
             db.session.commit()
             return redirect(url_for('guru_dashboard'))
         else:
@@ -319,7 +268,7 @@ def add_class():
 
 @app.route('/guru/class/<int:class_id>')
 def class_detail(class_id):
-    selected_class = kelas_ajar.query.get(class_id)
+    selected_class = KelasAjar.query.get(class_id)
     if selected_class:
         return render_template('guru/class_detail.html', selected_class=selected_class)
     else:
@@ -327,8 +276,8 @@ def class_detail(class_id):
 
 @app.route('/guru/class/<int:class_id>/quizzes')
 def class_quizzes(class_id):
-    quizzes = kuis.query.filter_by(id_kelas=class_id).all()
-    selected_class = kelas_ajar.query.get(class_id)
+    quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
+    selected_class = KelasAjar.query.get(class_id)
     return render_template('guru/class_quizzes.html', quizzes=quizzes, selected_class=selected_class)
 
 @app.route('/guru/class/<int:class_id>/add_quiz', methods=['GET', 'POST'])
@@ -336,26 +285,80 @@ def add_quiz(class_id):
     if 'id' not in session:
         return redirect(url_for('login'))
     
-    selected_class = kelas_ajar.query.get(class_id)
+    selected_class = KelasAjar.query.get(class_id)
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
-        kuis_baru = kuis(id_kelas=class_id, judul_kuis=judul_kuis)
-        db.session.add(kuis_baru)
+        new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis)
+        db.session.add(new_quiz)
         db.session.commit()
-         
         return redirect(url_for('class_quizzes', class_id=class_id))
-    return render_template('guru/add_quiz.html', selected_class=selected_class) 
+    return render_template('guru/add_quiz.html', selected_class=selected_class)
 
 @app.route('/guru/class/<int:class_id>/enrollment')
 def class_enrollments(class_id):
-    enrollments = enrollment.query.filter_by(id_kelas=class_id).all()
+    enrollments = Enrollment.query.filter_by(id_kelas=class_id).all()
     peserta = [User.query.get(enrollment.id_user) for enrollment in enrollments]
-    selected_class = kelas_ajar.query.get(class_id)
+    selected_class = KelasAjar.query.get(class_id)
     return render_template('guru/class_enrollments.html', peserta=peserta, selected_class=selected_class)
 
 @app.route('/siswa/dashboard')
 def siswa_dashboard():
-    return render_template('siswa/siswa_dashboard.html')
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    # Ambil daftar kelas yang diambil oleh pengguna
+    enrolled_classes = KelasAjar.query.join(Enrollment).filter(Enrollment.id_user == user_id).all()
+    return render_template('siswa/dashboard.html',classes=enrolled_classes)
+
+@app.route('/user/dashboard')
+def user_dashboard():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    # Ambil daftar kelas yang diambil oleh pengguna
+    enrolled_classes = KelasAjar.query.join(Enrollment).filter(Enrollment.id_user == user_id).all()
+
+    return render_template('siswa/dashboard.html', classes=enrolled_classes)
+
+
+@app.route('/enroll_class', methods=['GET', 'POST'])
+def enroll_class():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        enrollment_token = request.form.get('enrollment_token')
+        user_id = session['id']
+
+        if not enrollment_token:
+            flash('Invalid request. Please provide the enrollment token.')
+            return redirect(url_for('siswa_dashboard'))
+
+        # Cek apakah token valid
+        enrollment = Enrollment.query.filter_by(token=enrollment_token).first()
+
+        if enrollment:
+            # Cek apakah kelas sudah ada dan user sudah terdaftar
+            existing_enrollment = Enrollment.query.filter_by(id_kelas=enrollment.id_kelas, id_user=user_id).first()
+            if existing_enrollment:
+                flash('You are already enrolled in this class.')
+            else:
+                new_enrollment = Enrollment(id_kelas=enrollment.id_kelas, id_user=user_id, token=enrollment_token)
+                db.session.add(new_enrollment)
+                db.session.commit()
+                flash('Successfully enrolled in the class!')
+        else:
+            flash('Invalid token. Please check and try again.')
+
+        return redirect(url_for('siswa_dashboard'))
+
+    # Handle GET request
+    return render_template('siswa/enroll_class.html')
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
