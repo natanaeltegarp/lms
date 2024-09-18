@@ -1,0 +1,84 @@
+{% extends 'admin/starter.html' %}
+
+{% block title %}
+Manage User Roles
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Manage User Roles</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item active">Manage Roles</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">User Role Management</h3>
+                    </div>
+                    <!-- /.card-header -->
+                    <div class="card-body">
+                        <table id="roles-table" class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Current Role</th>
+                                    <th>Approval Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        <form action="{{ url_for('manage_roles') }}" method="POST">
+                                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                                            <input type="hidden" name="action_type" value="update_role">
+                                            <select name="new_role" class="form-control">
+                                                <option value="teacher" {% if user.role=='teacher' %}selected{% endif
+                                                    %}>Teacher</option>
+                                                <option value="student" {% if user.role=='student' %}selected{% endif
+                                                    %}>Student</option>
+                                            </select>
+                                            <button type="submit" class="btn btn-primary mt-2">Update Role</button>
+                                        </form>
+                                    </td>
+                                    <td>{{ 'Accepted' if user.is_accepted else 'Pending' }}</td>
+                                    <td>
+                                        {% if user.role == 'teacher' and not user.is_accepted %}
+                                        <form action="{{ url_for('manage_roles') }}" method="POST">
+                                            <input type="hidden" name="user_id" value="{{ user.id }}">
+                                            <input type="hidden" name="action_type" value="approve">
+                                            <button type="submit" class="btn btn-success">Approve</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- /.card-body -->
+                </div>
+                <!-- /.card -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'siswa/siswa_dashboard.html' %}
+
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Dashboard</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('siswa_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Dashboard</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Enrolled Classes -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Kelas yang Diambil</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>ID Kelas</th>
+                                    <th>Nama Mapel</th>
+                                    <th>Jenjang Kelas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for kelas in classes %}
+                                <tr>
+                                    <td>{{ kelas.id_kelas }}</td>
+                                    <td>{{ kelas.nama_mapel }}</td>
+                                    <td>{{ kelas.kelas }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center">Belum ada kelas yang diambil</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
