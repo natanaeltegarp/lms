@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Kuis: {{ selected_quiz.judul_kuis }}</title>
+</head>
+<body>
+    <h1>Detail Kuis: {{ selected_quiz.judul_kuis }}</h1>
+
+    <!-- Tabel soal dan kunci jawaban -->
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Soal</th>
+                <th>Kunci Jawaban</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for soal in soal_list %}
+            <tr>
+                <td>{{ soal.pertanyaan }}</td>
+                <td>{{ soal.kunci_jawaban }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="2">Belum ada soal ditambahkan</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>Tambah Soal Baru</h3>
+    <form action="" method="post">
+        <label for="pertanyaan">Soal:</label><br>
+        <textarea id="pertanyaan" name="pertanyaan" rows="4" cols="50" required></textarea><br><br>
+
+        <label for="kunci_jawaban">Kunci Jawaban:</label><br>
+        <textarea type="text" id="kunci_jawaban" name="kunci_jawaban" rows="4" cols="50" required></textarea><br><br>
+
+        <input type="submit" value="Tambah Soal">
+    </form>
+
+    <a href="{{ url_for('class_quizzes', class_id=selected_quiz.id_kelas) }}">Kembali ke Daftar Kuis</a>
+</body>
+</html>

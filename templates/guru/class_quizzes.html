@@ -17,14 +17,15 @@
 
     <ul>
         {% for kuis in quizzes %}
-        <li>{{ kuis.judul_kuis }}</li>
+        <li>
+            <a href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=kuis.id_kuis) }}">{{ kuis.judul_kuis }}</a>
+        </li>
         {% else %}
         <li>Tidak ada kuis yang ditemukan</li>
         {% endfor %}
     </ul>
 
-    <!-- Button untuk menambahkan kuis baru -->
-    <script>
+        <script>
         function add_quiz(){
             window.location.href="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}"
         } 

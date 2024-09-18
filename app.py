@@ -37,18 +37,25 @@ class KelasAjar(db.Model):
     id_kelas = db.Column(db.Integer, primary_key=True)
     nama_mapel = db.Column(db.String(255), nullable=False)
     kelas = db.Column(db.String(5), nullable=False)
+    token = db.Column(db.String(20), nullable=False)
 
 class Enrollment(db.Model):
     __tablename__ = 'enrollment'
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), primary_key=True, nullable=False)
     id_user = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True, nullable=False)
-    token = db.Column(db.String(20), nullable=False)
 
 class Kuis(db.Model):
     __tablename__ = 'kuis'
     id_kuis = db.Column(db.Integer, primary_key=True)
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
+
+class soal(db.Model):
+    __tablename__='soal'
+    id_soal = db.Column(db.Integer, primary_key=True)
+    id_kuis = db.Column(db.Integer, db.ForeignKey('kuis.id_kuis'), nullable=False)
+    pertanyaan = db.Column(db.Text, nullable=False)
+    kunci_jawaban = db.Column(db.Text, nullable=False)
 
 @app.route('/')
 def index():
@@ -250,16 +257,17 @@ def add_class():
         id_user = session['id']
 
         if nama_mapel and kelas and id_user:
-            new_class = KelasAjar(nama_mapel=nama_mapel, kelas=kelas)
+            random_token = secrets.token_hex(4)
+            token = f'{id_user}{random_token}'
+
+            new_class = kelas_ajar(nama_mapel=nama_mapel, kelas=kelas,token=token)
             db.session.add(new_class)
             db.session.commit()
 
             id_kelas = new_class.id_kelas
-            random_token = secrets.token_hex(4)
-            token = f'{id_kelas}{random_token}'
 
-            new_enrollment = Enrollment(id_kelas=id_kelas, id_user=id_user, token=token)
-            db.session.add(new_enrollment)
+            enrollments = enrollment(id_kelas=id_kelas, id_user=id_user)
+            db.session.add(enrollments)
             db.session.commit()
             return redirect(url_for('guru_dashboard'))
         else:
@@ -293,6 +301,28 @@ def add_quiz(class_id):
         db.session.commit()
         return redirect(url_for('class_quizzes', class_id=class_id))
     return render_template('guru/add_quiz.html', selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET', 'POST'])
+def quiz_detail(class_id, quiz_id):
+    selected_quiz = kuis.query.get(quiz_id)
+    
+    if not selected_quiz:
+        return "Kuis tidak ditemukan", 404
+
+    soal_list = soal.query.filter_by(id_kuis=quiz_id).all()
+
+    if request.method == 'POST':
+        pertanyaan = request.form['pertanyaan']
+        kunci_jawaban = request.form['kunci_jawaban']
+
+        soal_baru = soal(id_kuis=quiz_id, pertanyaan=pertanyaan, kunci_jawaban=kunci_jawaban)
+        db.session.add(soal_baru)
+        db.session.commit()
+
+        return redirect(url_for('quiz_detail', class_id=class_id, quiz_id=quiz_id))
+
+    return render_template('guru/quiz_detail.html', selected_quiz=selected_quiz, soal_list=soal_list)
+
 
 @app.route('/guru/class/<int:class_id>/enrollment')
 def class_enrollments(class_id):

@@ -15,6 +15,7 @@
     <h1>Daftar Enrollment Kelas: {{ selected_class.nama_mapel }}</h1>
 
     <ul>
+        <li>Token Enrollment: {{ selected_class.token }}</li>
         {% for user in peserta %}
         <li>{{ user.fullname }} ({{ user.email }})</li>
         {% else %}
