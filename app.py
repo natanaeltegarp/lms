@@ -32,14 +32,14 @@ class User(db.Model):
     nisn_or_nuptk = db.Column(db.String(50), nullable=False)
     is_accepted = db.Column(db.Boolean, default=False)
 
-class KelasAjar(db.Model):
+class kelas_ajar(db.Model):
     __tablename__ = 'kelas_ajar'
     id_kelas = db.Column(db.Integer, primary_key=True)
     nama_mapel = db.Column(db.String(255), nullable=False)
     kelas = db.Column(db.String(5), nullable=False)
     token = db.Column(db.String(20), nullable=False)
 
-class Enrollment(db.Model):
+class enrollment(db.Model):
     __tablename__ = 'enrollment'
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), primary_key=True, nullable=False)
     id_user = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True, nullable=False)
@@ -246,7 +246,7 @@ def guru_dashboard():
         return redirect(url_for('login'))
 
     user_id = session['id']
-    kelas_list = KelasAjar.query.join(Enrollment).filter(Enrollment.id_user == user_id).all()
+    kelas_list = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('guru/guru_dashboard.html', classes=kelas_list)
 
 @app.route('/guru/add_class', methods=['GET', 'POST'])
@@ -276,7 +276,7 @@ def add_class():
 
 @app.route('/guru/class/<int:class_id>')
 def class_detail(class_id):
-    selected_class = KelasAjar.query.get(class_id)
+    selected_class = kelas_ajar.query.get(class_id)
     if selected_class:
         return render_template('guru/class_detail.html', selected_class=selected_class)
     else:
@@ -285,7 +285,7 @@ def class_detail(class_id):
 @app.route('/guru/class/<int:class_id>/quizzes')
 def class_quizzes(class_id):
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
-    selected_class = KelasAjar.query.get(class_id)
+    selected_class = kelas_ajar.query.get(class_id)
     return render_template('guru/class_quizzes.html', quizzes=quizzes, selected_class=selected_class)
 
 @app.route('/guru/class/<int:class_id>/add_quiz', methods=['GET', 'POST'])
@@ -293,7 +293,7 @@ def add_quiz(class_id):
     if 'id' not in session:
         return redirect(url_for('login'))
     
-    selected_class = KelasAjar.query.get(class_id)
+    selected_class = kelas_ajar.query.get(class_id)
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
         new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis)
@@ -304,7 +304,7 @@ def add_quiz(class_id):
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET', 'POST'])
 def quiz_detail(class_id, quiz_id):
-    selected_quiz = kuis.query.get(quiz_id)
+    selected_quiz = Kuis.query.get(quiz_id)
     
     if not selected_quiz:
         return "Kuis tidak ditemukan", 404
@@ -336,9 +336,9 @@ def delete_question(class_id, quiz_id, question_id):
 
 @app.route('/guru/class/<int:class_id>/enrollment')
 def class_enrollments(class_id):
-    enrollments = Enrollment.query.filter_by(id_kelas=class_id).all()
+    enrollments = enrollment.query.filter_by(id_kelas=class_id).all()
     peserta = [User.query.get(enrollment.id_user) for enrollment in enrollments]
-    selected_class = KelasAjar.query.get(class_id)
+    selected_class = kelas_ajar.query.get(class_id)
     return render_template('guru/class_enrollments.html', peserta=peserta, selected_class=selected_class)
 
 @app.route('/siswa/dashboard')
@@ -348,7 +348,7 @@ def siswa_dashboard():
 
     user_id = session['id']
     # Ambil daftar kelas yang diambil oleh pengguna
-    enrolled_classes = KelasAjar.query.join(Enrollment).filter(Enrollment.id_user == user_id).all()
+    enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('siswa/dashboard.html',classes=enrolled_classes)
 
 @app.route('/user/dashboard')
@@ -358,7 +358,7 @@ def user_dashboard():
 
     user_id = session['id']
     # Ambil daftar kelas yang diambil oleh pengguna
-    enrolled_classes = KelasAjar.query.join(Enrollment).filter(Enrollment.id_user == user_id).all()
+    enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
 
     return render_template('siswa/dashboard.html', classes=enrolled_classes)
 
@@ -376,16 +376,17 @@ def enroll_class():
             flash('Invalid request. Please provide the enrollment token.')
             return redirect(url_for('siswa_dashboard'))
 
-        # Cek apakah token valid
-        enrollment = Enrollment.query.filter_by(token=enrollment_token).first()
+        # Cek apakah token valid di tabel kelas_ajar
+        selected_class = kelas_ajar.query.filter_by(token=enrollment_token).first()
 
-        if enrollment:
-            # Cek apakah kelas sudah ada dan user sudah terdaftar
-            existing_enrollment = Enrollment.query.filter_by(id_kelas=enrollment.id_kelas, id_user=user_id).first()
+        if selected_class:
+            # Cek apakah user sudah terdaftar di kelas
+            existing_enrollment = enrollment.query.filter_by(id_kelas=selected_class.id_kelas, id_user=user_id).first()
             if existing_enrollment:
                 flash('You are already enrolled in this class.')
             else:
-                new_enrollment = Enrollment(id_kelas=enrollment.id_kelas, id_user=user_id, token=enrollment_token)
+                # Tambahkan user ke kelas di tabel Enrollment
+                new_enrollment = enrollment(id_kelas=selected_class.id_kelas, id_user=user_id)
                 db.session.add(new_enrollment)
                 db.session.commit()
                 flash('Successfully enrolled in the class!')
@@ -396,7 +397,6 @@ def enroll_class():
 
     # Handle GET request
     return render_template('siswa/enroll_class.html')
-
 
 
 
