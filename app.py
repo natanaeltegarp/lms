@@ -341,6 +341,16 @@ def quiz_detail(class_id, quiz_id):
 
     return render_template('guru/quiz_detail.html', selected_quiz=selected_quiz, soal_list=soal_list)
 
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
+def delete_question(class_id, quiz_id, question_id):
+    pertanyaan = soal.query.get(question_id)
+    if pertanyaan:
+        db.session.delete(pertanyaan)
+        db.session.commit()
+        flash('Soal berhasil dihapus', 'success')
+    else:
+        flash('Soal tidak ditemukan', 'danger')
+    return redirect(url_for('quiz_detail', class_id=class_id, quiz_id=quiz_id))
 
 @app.route('/guru/class/<int:class_id>/enrollment')
 def class_enrollments(class_id):
