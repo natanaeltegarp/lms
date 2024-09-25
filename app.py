@@ -369,6 +369,7 @@ def siswa_dashboard():
     enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('siswa/dashboard.html',classes=enrolled_classes)
 
+
 @app.route('/siswa/class/<int:class_id>/quizzes')
 def siswa_class_quizzes(class_id):
     selected_class = kelas_ajar.query.get(class_id)
@@ -421,16 +422,7 @@ def siswa_quiz_detail(class_id, quiz_id):
 
 
 
-@app.route('/user/dashboard')
-def user_dashboard():
-    if 'id' not in session:
-        return redirect(url_for('login'))
 
-    user_id = session['id']
-    # Ambil daftar kelas yang diambil oleh pengguna
-    enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
-
-    return render_template('siswa/dashboard.html', classes=enrolled_classes)
 
 
 @app.route('/enroll_class', methods=['GET', 'POST'])
