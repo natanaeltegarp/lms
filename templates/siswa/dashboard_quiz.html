@@ -1,0 +1,53 @@
+{% extends 'siswa/kelas_tempplate.html' %}
+
+{% block title %}
+Dashboard Kuis
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Dashboard Kuis</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('siswa_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Dashboard Kuis</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Daftar Kuis untuk Kelas yang Diambil</h3>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for kelas in classes %}
+                    <li class="list-group-item">
+                        <strong>{{ kelas.nama_mapel }}</strong>
+                        <ul>
+                            {% for quiz in kelas.quizzes %}
+                            <li>
+                                <a href="{{ url_for('siswa_quiz', class_id=kelas.id_kelas, quiz_id=quiz.id_kuis) }}">
+                                    {{ quiz.judul_kuis }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-center">Belum ada kuis di kelas ini</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

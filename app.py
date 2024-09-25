@@ -50,12 +50,30 @@ class Kuis(db.Model):
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
 
-class soal(db.Model):
+class Soal(db.Model):
     __tablename__='soal'
-    id_soal = db.Column(db.Integer, primary_key=True)
+    id_soal = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id_kuis = db.Column(db.Integer, db.ForeignKey('kuis.id_kuis'), nullable=False)
     pertanyaan = db.Column(db.Text, nullable=False)
     kunci_jawaban = db.Column(db.Text, nullable=False)
+
+    def __repr__(self):
+        return f'<Soal {self.id_soal}>'
+
+class Jawaban(db.Model):
+    __tablename__ = 'jawaban'
+    id_jawaban = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Auto-increment primary key
+    id_user = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Foreign key to users table
+    id_soal = db.Column(db.Integer, db.ForeignKey('soal.id_soal'), nullable=False)  # Foreign key to soal table
+    jawaban = db.Column(db.Text, nullable=False)  # Answer provided by the user
+
+    # Relationships
+    user = db.relationship('User', backref=db.backref('jawaban', lazy=True))
+    soal = db.relationship('Soal', backref=db.backref('jawaban', lazy=True))
+
+    def __repr__(self):
+        return f'<Jawaban {self.id_jawaban}>'
+
 
 @app.route('/')
 def index():
@@ -309,13 +327,13 @@ def quiz_detail(class_id, quiz_id):
     if not selected_quiz:
         return "Kuis tidak ditemukan", 404
 
-    soal_list = soal.query.filter_by(id_kuis=quiz_id).all()
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
 
     if request.method == 'POST':
         pertanyaan = request.form['pertanyaan']
         kunci_jawaban = request.form['kunci_jawaban']
 
-        soal_baru = soal(id_kuis=quiz_id, pertanyaan=pertanyaan, kunci_jawaban=kunci_jawaban)
+        soal_baru = Soal(id_kuis=quiz_id, pertanyaan=pertanyaan, kunci_jawaban=kunci_jawaban)
         db.session.add(soal_baru)
         db.session.commit()
 
@@ -340,6 +358,58 @@ def siswa_dashboard():
     # Ambil daftar kelas yang diambil oleh pengguna
     enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('siswa/dashboard.html',classes=enrolled_classes)
+
+@app.route('/siswa/class/<int:class_id>/quizzes')
+def siswa_class_quizzes(class_id):
+    selected_class = kelas_ajar.query.get(class_id)
+    quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
+    return render_template('siswa/siswa_quiz.html', quizzes=quizzes, selected_class=selected_class)
+
+@app.route('/siswa/dashboard_quiz', methods=['GET'])
+def dashboard_quiz():
+    user_id = session.get('id')
+    # Ambil class_id dari session
+    class_id = session.get('current_class_id')
+    
+    if class_id is None:
+        flash('No class selected. Please go back to select a class.')
+        return redirect(url_for('siswa_dashboard'))
+
+    quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
+    return render_template('siswa/dashboard_quiz.html', quizzes=quizzes, class_id=class_id)
+
+
+@app.route('/siswa/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET', 'POST'])
+def siswa_quiz_detail(class_id, quiz_id):
+    selected_quiz = Kuis.query.get(quiz_id)
+
+    if not selected_quiz:
+        return "Kuis tidak ditemukan", 404
+
+    # Periksa apakah pengguna terdaftar di kelas ini
+    user_id = session.get('id')
+    is_enrolled = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
+
+    if not is_enrolled:
+        flash('Anda tidak terdaftar di kelas ini. Silakan daftar terlebih dahulu.')
+        return redirect(url_for('siswa_dashboard'))  # Atau arahkan ke halaman yang sesuai
+
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+
+    if request.method == 'POST':
+        # Proses jawaban yang diberikan oleh siswa
+        for soal in soal_list:
+            jawaban = request.form.get(f'jawaban_{soal.id_soal}')
+            if jawaban:
+                new_jawaban = Jawaban(id_user=user_id, id_soal=soal.id_soal, jawaban=jawaban)
+                db.session.add(new_jawaban)
+        db.session.commit()
+        flash('Jawaban Anda berhasil disimpan!')
+        return redirect(url_for('siswa_quiz_detail', class_id=class_id, quiz_id=quiz_id))
+
+    return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, soal_list=soal_list)
+
+
 
 @app.route('/user/dashboard')
 def user_dashboard():

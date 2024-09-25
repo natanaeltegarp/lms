@@ -34,21 +34,25 @@ Dashboard
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th>ID Kelas</th>
+                                    <th>No</th>
                                     <th>Nama Mapel</th>
-                                    <th>Jenjang Kelas</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for kelas in classes %}
                                 <tr>
-                                    <td>{{ kelas.id_kelas }}</td>
-                                    <td>{{ kelas.nama_mapel }}</td>
-                                    <td>{{ kelas.kelas }}</td>
+                                    <td>{{ loop.index }}</td> <!-- Menampilkan nomor urut -->
+                                    <td>
+                                        <!-- Link menuju halaman kelas -->
+                                        <a href="{{ url_for('siswa_class_quizzes', class_id=kelas.id_kelas) }}">
+                                            {{ kelas.nama_mapel }}
+                                        </a>
+                                    </td>
                                 </tr>
+
                                 {% else %}
                                 <tr>
-                                    <td colspan="3" class="text-center">Belum ada kelas yang diambil</td>
+                                    <td colspan="2" class="text-center">Belum ada kelas yang diambil</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -59,4 +63,5 @@ Dashboard
         </div>
     </div>
 </div>
+
 {% endblock %}

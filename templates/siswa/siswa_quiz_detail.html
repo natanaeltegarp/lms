@@ -1,0 +1,20 @@
+{% extends 'siswa/kelas_tempplate.html' %}
+
+{% block title %}
+Detail Kuis
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>{{ selected_quiz.judul_kuis }}</h2>
+    <form method="POST">
+        {% for soal in soal_list %}
+        <div class="form-group">
+            <label>{{ loop.index }}. {{ soal.pertanyaan }}</label>
+            <textarea class="form-control" name="jawaban_{{ soal.id_soal }}" rows="3" required></textarea>
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Kirim Jawaban</button>
+    </form>
+</div>
+{% endblock %}
