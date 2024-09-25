@@ -343,7 +343,7 @@ def quiz_detail(class_id, quiz_id):
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):
-    pertanyaan = soal.query.get(question_id)
+    pertanyaan = Soal.query.get(question_id)
     if pertanyaan:
         db.session.delete(pertanyaan)
         db.session.commit()
