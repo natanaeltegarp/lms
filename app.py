@@ -465,7 +465,7 @@ def enroll_class():
 
         if not enrollment_token:
             flash('Invalid request. Please provide the enrollment token.')
-            return redirect(url_for('siswa_dashboard'))
+            return redirect(url_for('enroll_class'))
 
         # Cek apakah token valid di tabel kelas_ajar
         selected_class = kelas_ajar.query.filter_by(token=enrollment_token).first()
@@ -482,7 +482,8 @@ def enroll_class():
                 db.session.commit()
                 flash('Successfully enrolled in the class!')
         else:
-            flash('Invalid token. Please check and try again.')
+            error = 'Token yang dimasukkan salah. Silakan coba lagi.'
+            return render_template('siswa/enroll_class.html', error=error)
 
         return redirect(url_for('siswa_dashboard'))
 
