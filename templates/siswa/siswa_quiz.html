@@ -28,18 +28,34 @@ Detail Kelas
                 <h1>Daftar Kuis untuk Kelas: {{ selected_class.nama_mapel }}</h1>
             </div>
             <div class="card-body">
-                <ul class="list-group">
+                <div class="row">
                     {% for quiz in quizzes %}
-                    <li class="list-group-item">
-                        <a
-                            href="{{ url_for('siswa_quiz_detail', class_id=selected_class.id_kelas, quiz_id=quiz.id_kuis) }}">
-                            {{ loop.index }}. {{ quiz.judul_kuis }}
-                        </a>
-                    </li>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>{{ loop.index }}. {{ quiz.judul_kuis }}</h5>
+                            </div>
+                            <div class="card-body">
+                                {% if quiz_status[quiz.id_kuis] %}
+                                <span class="text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    Sudah dikerjakan
+                                </span>
+                                {% else %}
+                                <a href="{{ url_for('siswa_quiz_detail', class_id=selected_class.id_kelas, quiz_id=quiz.id_kuis) }}"
+                                    class="btn btn-sm btn-primary">
+                                    Kerjakan Kuis
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                     {% else %}
-                    <li class="list-group-item text-center">Belum ada kuis di kelas ini</li>
+                    <div class="col-md-12 text-center">
+                        <h5>Belum ada kuis di kelas ini</h5>
+                    </div>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         </div>
     </div>

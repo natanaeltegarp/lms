@@ -14,7 +14,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
-DB_NAME = "sampledb"
+DB_NAME = "coba"
 DB_USER = "postgres"
 DB_PASS = "Indonesia09"
 
@@ -372,9 +372,34 @@ def siswa_dashboard():
 
 @app.route('/siswa/class/<int:class_id>/quizzes')
 def siswa_class_quizzes(class_id):
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
     selected_class = kelas_ajar.query.get(class_id)
+    
+    if not selected_class:
+        flash('Kelas tidak ditemukan', 'danger')
+        return redirect(url_for('siswa_dashboard'))
+
+    # Check if user is enrolled in the class
+    is_enrolled = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
+    if not is_enrolled:
+        flash('Anda tidak terdaftar di kelas ini.', 'warning')
+        return redirect(url_for('siswa_dashboard'))
+
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
-    return render_template('siswa/siswa_quiz.html', quizzes=quizzes, selected_class=selected_class)
+    
+    # Check if the user has taken each quiz
+    quiz_status = {}
+    for quiz in quizzes:
+        has_taken = Jawaban.query.join(Soal).filter(
+            Jawaban.id_user == user_id,
+            Soal.id_kuis == quiz.id_kuis
+        ).first() is not None
+        quiz_status[quiz.id_kuis] = has_taken
+
+    return render_template('siswa/siswa_quiz.html',  quizzes=quizzes, selected_class=selected_class, quiz_status=quiz_status)
 
 @app.route('/siswa/dashboard_quiz', methods=['GET'])
 def dashboard_quiz():
@@ -392,38 +417,42 @@ def dashboard_quiz():
 
 @app.route('/siswa/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET', 'POST'])
 def siswa_quiz_detail(class_id, quiz_id):
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
     selected_quiz = Kuis.query.get(quiz_id)
+    selected_class = kelas_ajar.query.get(class_id)
 
-    if not selected_quiz:
-        return "Kuis tidak ditemukan", 404
+    if not selected_quiz or not selected_class:
+        flash('Kuis atau kelas tidak ditemukan', 'danger')
+        return redirect(url_for('siswa_dashboard'))
 
-    # Periksa apakah pengguna terdaftar di kelas ini
-    user_id = session.get('id')
+    # Check if user is enrolled in the class
     is_enrolled = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
-
     if not is_enrolled:
-        flash('Anda tidak terdaftar di kelas ini. Silakan daftar terlebih dahulu.')
-        return redirect(url_for('siswa_dashboard'))  # Atau arahkan ke halaman yang sesuai
+        flash('Anda tidak terdaftar di kelas ini. Silakan daftar terlebih dahulu.', 'warning')
+        return redirect(url_for('siswa_dashboard'))
+
+    # Check if user has already submitted answers for this quiz
+    has_submitted = Jawaban.query.join(Soal).filter(
+        Jawaban.id_user == user_id,
+        Soal.id_kuis == quiz_id
+    ).first() is not None
 
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
 
-    if request.method == 'POST':
-        # Proses jawaban yang diberikan oleh siswa
+    if request.method == 'POST' and not has_submitted:
+        # Process student's answers
         for soal in soal_list:
             jawaban = request.form.get(f'jawaban_{soal.id_soal}')
             if jawaban:
                 new_jawaban = Jawaban(id_user=user_id, id_soal=soal.id_soal, jawaban=jawaban)
                 db.session.add(new_jawaban)
         db.session.commit()
-        flash('Jawaban Anda berhasil disimpan!')
-        return redirect(url_for('siswa_quiz_detail', class_id=class_id, quiz_id=quiz_id))
+        has_submitted = True  # Update has_submitted status
 
-    return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, soal_list=soal_list)
-
-
-
-
-
+    return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, selected_class=selected_class,soal_list=soal_list, has_submitted=has_submitted)
 
 @app.route('/enroll_class', methods=['GET', 'POST'])
 def enroll_class():

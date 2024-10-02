@@ -51,17 +51,21 @@
                         data-accordion="false">
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('siswa_dashboard') }}">
-                                <p>Dashboard</p>
+                                <i class="nav-icon fas fa-list"></i>
+                                <p>Daftar kelas</p>
                             </a>
                         </li>
-                        <li class="nav-item"></li>
-                        <a class="nav-link" href="{{ url_for('enroll_class') }}">
-                            <p>Enroll kelas</p>
-                        </a>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('enroll_class') }}">
+                                <i class="nav-icon fas fa-key"></i>
+                                <p>Enroll kelas</p>
+                            </a>
+                        </li>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
+                                <i class="nav-icon fas fa-sign-out-alt"></i>
+                                <p>Logout</p>
                             </a>
                         </li>
                     </ul>

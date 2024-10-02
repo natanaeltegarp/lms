@@ -1,15 +1,13 @@
 {% extends 'siswa/siswa_dashboard.html' %}
 
-{% block title %}
-Enroll Kelas
-{% endblock %}
+{% block title %}Enroll Kelas Baru{% endblock %}
 
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Enroll Kelas</h1>
+                <h1 class="m-0">Enroll Kelas Baru</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -23,19 +21,47 @@ Enroll Kelas
 
 <div class="content">
     <div class="container-fluid">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Masukkan Token Enrollment</h3>
-            </div>
-            <div class="card-body">
-                <form action="{{ url_for('enroll_class') }}" method="post">
-                    <div class="form-group">
-                        <label for="enrollment_token">Token Enrollment</label>
-                        <input type="text" id="enrollment_token" name="enrollment_token" class="form-control"
-                            placeholder="Masukkan token kelas" required>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-plus-circle mr-2"></i>
+                            Gabung Kelas Baru
+                        </h3>
                     </div>
-                    <button type="submit" class="btn btn-primary">Enroll</button>
-                </form>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">
+                            Masukkan token enrollment yang diberikan oleh guru Anda untuk bergabung dengan kelas baru.
+                        </p>
+                        <form action="{{ url_for('enroll_class') }}" method="post">
+                            <div class="form-group">
+                                <label for="enrollment_token">
+                                    <i class="fas fa-key mr-2"></i>Token Enrollment
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" id="enrollment_token" name="enrollment_token"
+                                        class="form-control" placeholder="Masukkan token kelas" required>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-lock"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-sign-in-alt mr-2"></i>Gabung Kelas
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('siswa_dashboard') }}" class="text-muted">
+                        <i class="fas fa-arrow-left mr-2"></i>Kembali ke Dashboard
+                    </a>
+                </div>
             </div>
         </div>
     </div>
