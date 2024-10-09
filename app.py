@@ -11,6 +11,7 @@ app.secret_key = 'excel-coba-kp'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
@@ -490,7 +491,63 @@ def enroll_class():
     # Handle GET request
     return render_template('siswa/enroll_class.html')
 
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'id' not in session:
+        return redirect(url_for('login'))
 
+    user_id = session['id']
+    user = User.query.get(user_id)
+
+    if request.method == 'POST':
+        if 'update_info' in request.form:
+            # Update fullname and email
+            new_fullname = request.form.get('fullname')
+            new_email = request.form.get('email')
+            
+            updates = []
+
+            if new_fullname and new_fullname != user.fullname:
+                user.fullname = new_fullname
+                updates.append('full name')
+
+            if new_email and new_email != user.email:
+                if User.query.filter_by(email=new_email).first():
+                    flash('Email already in use.', 'danger')
+                else:
+                    user.email = new_email
+                    updates.append('email')
+
+            if updates:
+                if len(updates) == 1:
+                    flash(f'Your {updates[0]} has been updated successfully.', 'success')
+                else:
+                    flash('Your personal information has been updated successfully.', 'success')
+            else:
+                flash('No changes were made to your personal information.', 'info')
+
+        elif 'change_password' in request.form:
+            # Update password
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+            if current_password and new_password and confirm_password:
+                if check_password_hash(user.password, current_password):
+                    if new_password == confirm_password:
+                        user.password = generate_password_hash(new_password)
+                        flash('Password updated successfully.', 'success')
+                    else:
+                        flash('New passwords do not match.', 'danger')
+                else:
+                    flash('Current password is incorrect.', 'danger')
+            else:
+                flash('All password fields are required.', 'danger')
+
+        db.session.commit()
+        return redirect(url_for('profile'))
+
+    return render_template('siswa/profile.html', user=user)
 
 if __name__ == '__main__':
     app.run(debug=True)
