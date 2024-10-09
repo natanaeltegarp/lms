@@ -1,6 +1,7 @@
 from flask import Flask, request, session, redirect, url_for, render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 import psycopg2 
 import psycopg2.extras
 import secrets
@@ -49,6 +50,7 @@ class Kuis(db.Model):
     id_kuis = db.Column(db.Integer, primary_key=True)
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
+    batas_waktu = db.Column(db.DateTime, nullable=True)
 
 class Soal(db.Model):
     __tablename__='soal'
@@ -314,6 +316,9 @@ def add_quiz(class_id):
     selected_class = kelas_ajar.query.get(class_id)
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
+        batas_waktu = request.form['batas_waktu']
+        if batas_waktu:
+            batas_waktu = datetime.strptime(batas_waktu, '%Y-%m-%dT%H:%M')
         new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis)
         db.session.add(new_quiz)
         db.session.commit()
