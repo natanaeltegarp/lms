@@ -1,0 +1,88 @@
+{% extends 'guru/guru_dashboard.html' %}
+
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Dashboard</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('class_quizzes', class_id=selected_quiz.id_kelas) }}">Daftar Kuis</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('quiz_detail', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}">{{ selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }} - {{ selected_class.kelas }}</a></li>
+                    <li class="breadcrumb-item active">Edit Soal</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Enrolled Classes -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Soal {{ selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }} - {{ selected_class.kelas }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <table border="1">
+                            <thead>
+                                <tr>
+                                    <th>Soal</th>
+                                    <th>Kunci Jawaban</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for soal in soal_list %}
+                                <tr>
+                                    <td>{{ soal.pertanyaan }}</td>
+                                    <td>{{ soal.kunci_jawaban }}</td>
+                                    <td>
+                                        <form action="{{ url_for('delete_question', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis, question_id=soal.id_soal) }}" method="post" style="display:inline;">
+                                            <button type="submit" onclick="return confirm('Apakah Anda yakin ingin menghapus soal ini?')" class="btn btn-danger">Hapus</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2">Belum ada soal ditambahkan</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Tambah Soal Baru</h3>
+                    </div>
+                    <div class="card-body">
+                        <form action="" method="post">
+                            <label for="pertanyaan">Soal:</label><br>
+                            <textarea id="pertanyaan" name="pertanyaan" rows="4" cols="50" required></textarea><br><br>
+                    
+                            <label for="kunci_jawaban">Kunci Jawaban:</label><br>
+                            <textarea type="text" id="kunci_jawaban" name="kunci_jawaban" rows="4" cols="50" required></textarea><br><br>
+                    
+                            <input type="submit" value="Tambah Soal" class="btn btn-primary">
+                        </form>
+                    
+                        <a href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=selected_quiz.id_kuis) }}">Kembali ke Detail Kuis</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
