@@ -1,49 +1,78 @@
-{% extends 'guru/guru_dashboard.html' %}
-
-{% block title %}
-Dashboard
-{% endblock %}
-
-{% block content %}
+{% extends 'guru/guru_dashboard.html' %} {% block title %} Dashboard {% endblock
+%} {% block content %}
 <div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
-                    <li class="breadcrumb-item active">Tambah Kuis</li>
-                </ol>
-            </div>
-        </div>
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0">Dashboard</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('guru_dashboard') }}">Home</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('guru_dashboard') }}">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a
+              href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}"
+              >{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a
+            >
+          </li>
+          <li class="breadcrumb-item active">Tambah Kuis</li>
+        </ol>
+      </div>
     </div>
+  </div>
 </div>
 
 <div class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Enrolled Classes -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Tambah Kuis Kelas: {{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h3>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}" method="post">
-                            <label for="judul_kuis">Judul Kuis:</label><br>
-                            <input type="text" id="judul_kuis" name="judul_kuis" required><br><br>
-                            <input type="submit" value="Tambah Kuis" class="btn btn-primary">
-                        </form>
-                    
-                        <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}">Kembali ke Daftar Kuis</a>
-                    </div>
-                </div>
-            </div>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Enrolled Classes -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              Tambah Kuis Kelas: {{ selected_class.kelas }} - {{
+              selected_class.nama_mapel }}
+            </h3>
+          </div>
+          <div class="card-body">
+            <form
+              action="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}"
+              method="post"
+            >
+              <label for="judul_kuis">Judul Kuis:</label><br />
+              <input
+                type="text"
+                id="judul_kuis"
+                name="judul_kuis"
+                required
+              /><br /><br />
+              <label for="batas_waktu">Batas Waktu:</label>
+              <input
+                type="datetime-local"
+                id="batas_waktu"
+                name="batas_waktu"
+                required
+              />
+              <input
+                type="submit"
+                value="Tambah Kuis"
+                class="btn btn-primary"
+              />
+            </form>
+
+            <a
+              href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}"
+              >Kembali ke Daftar Kuis</a
+            >
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
