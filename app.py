@@ -52,7 +52,7 @@ class Kuis(db.Model):
     id_kuis = db.Column(db.Integer, primary_key=True)
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
-    batas_waktu = db.Column(db.DateTime, nullable=True)
+    batas_waktu = db.Column(db.DateTime(timezone=True), nullable=True)
 
 class Materi(db.Model):
     __tablename__ = 'materi'
@@ -329,9 +329,8 @@ def add_quiz(class_id):
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
         batas_waktu = request.form['batas_waktu']
-        if batas_waktu:
-            batas_waktu = datetime.strptime(batas_waktu, '%Y-%m-%dT%H:%M')
-        new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis)
+        batas_waktu = datetime.fromisoformat(batas_waktu)
+        new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis, batas_waktu=batas_waktu)
         db.session.add(new_quiz)
         db.session.commit()
         return redirect(url_for('class_quizzes', class_id=class_id))

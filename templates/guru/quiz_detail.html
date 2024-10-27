@@ -34,7 +34,8 @@ Dashboard
                         <h3 class="card-title">Detail Kuis: {{ selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }} - {{ selected_class.kelas }}</h3>
                     </div>
                     <div class="card-body">
-                         <!-- Tombol pilihan -->
+                        <p><strong>Batas Waktu:</strong> {{ selected_quiz.batas_waktu.strftime('%Y-%m-%d %H:%M:%S %Z') }}</p> 
+                        <!-- Tombol pilihan -->
                         <a href="{{ url_for('quiz_edit', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}">
                             <button class="btn btn-primary">Edit Soal</button>
                         </a>
