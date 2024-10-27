@@ -1,6 +1,7 @@
 from flask import Flask, request, session, redirect, url_for, render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 import psycopg2 
 import psycopg2.extras
 import secrets
@@ -10,6 +11,7 @@ app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 
 db = SQLAlchemy(app)
 
@@ -49,6 +51,7 @@ class Kuis(db.Model):
     id_kuis = db.Column(db.Integer, primary_key=True)
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
+    batas_waktu = db.Column(db.DateTime, nullable=True)
 
 class Soal(db.Model):
     __tablename__='soal'
@@ -314,6 +317,9 @@ def add_quiz(class_id):
     selected_class = kelas_ajar.query.get(class_id)
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
+        batas_waktu = request.form['batas_waktu']
+        if batas_waktu:
+            batas_waktu = datetime.strptime(batas_waktu, '%Y-%m-%dT%H:%M')
         new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis)
         db.session.add(new_quiz)
         db.session.commit()
@@ -388,11 +394,37 @@ def siswa_dashboard():
     enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('siswa/dashboard.html',classes=enrolled_classes)
 
+
 @app.route('/siswa/class/<int:class_id>/quizzes')
 def siswa_class_quizzes(class_id):
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
     selected_class = kelas_ajar.query.get(class_id)
+    
+    if not selected_class:
+        flash('Kelas tidak ditemukan', 'danger')
+        return redirect(url_for('siswa_dashboard'))
+
+    # Check if user is enrolled in the class
+    is_enrolled = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
+    if not is_enrolled:
+        flash('Anda tidak terdaftar di kelas ini.', 'warning')
+        return redirect(url_for('siswa_dashboard'))
+
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
-    return render_template('siswa/siswa_quiz.html', quizzes=quizzes, selected_class=selected_class)
+    
+    # Check if the user has taken each quiz
+    quiz_status = {}
+    for quiz in quizzes:
+        has_taken = Jawaban.query.join(Soal).filter(
+            Jawaban.id_user == user_id,
+            Soal.id_kuis == quiz.id_kuis
+        ).first() is not None
+        quiz_status[quiz.id_kuis] = has_taken
+
+    return render_template('siswa/siswa_quiz.html',  quizzes=quizzes, selected_class=selected_class, quiz_status=quiz_status)
 
 @app.route('/siswa/dashboard_quiz', methods=['GET'])
 def dashboard_quiz():
@@ -410,47 +442,42 @@ def dashboard_quiz():
 
 @app.route('/siswa/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET', 'POST'])
 def siswa_quiz_detail(class_id, quiz_id):
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
     selected_quiz = Kuis.query.get(quiz_id)
+    selected_class = kelas_ajar.query.get(class_id)
 
-    if not selected_quiz:
-        return "Kuis tidak ditemukan", 404
+    if not selected_quiz or not selected_class:
+        flash('Kuis atau kelas tidak ditemukan', 'danger')
+        return redirect(url_for('siswa_dashboard'))
 
-    # Periksa apakah pengguna terdaftar di kelas ini
-    user_id = session.get('id')
+    # Check if user is enrolled in the class
     is_enrolled = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
-
     if not is_enrolled:
-        flash('Anda tidak terdaftar di kelas ini. Silakan daftar terlebih dahulu.')
-        return redirect(url_for('siswa_dashboard'))  # Atau arahkan ke halaman yang sesuai
+        flash('Anda tidak terdaftar di kelas ini. Silakan daftar terlebih dahulu.', 'warning')
+        return redirect(url_for('siswa_dashboard'))
+
+    # Check if user has already submitted answers for this quiz
+    has_submitted = Jawaban.query.join(Soal).filter(
+        Jawaban.id_user == user_id,
+        Soal.id_kuis == quiz_id
+    ).first() is not None
 
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
 
-    if request.method == 'POST':
-        # Proses jawaban yang diberikan oleh siswa
+    if request.method == 'POST' and not has_submitted:
+        # Process student's answers
         for soal in soal_list:
             jawaban = request.form.get(f'jawaban_{soal.id_soal}')
             if jawaban:
                 new_jawaban = Jawaban(id_user=user_id, id_soal=soal.id_soal, jawaban=jawaban)
                 db.session.add(new_jawaban)
         db.session.commit()
-        flash('Jawaban Anda berhasil disimpan!')
-        return redirect(url_for('siswa_quiz_detail', class_id=class_id, quiz_id=quiz_id))
+        has_submitted = True  # Update has_submitted status
 
-    return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, soal_list=soal_list)
-
-
-
-@app.route('/user/dashboard')
-def user_dashboard():
-    if 'id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['id']
-    # Ambil daftar kelas yang diambil oleh pengguna
-    enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
-
-    return render_template('siswa/dashboard.html', classes=enrolled_classes)
-
+    return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, selected_class=selected_class,soal_list=soal_list, has_submitted=has_submitted)
 
 @app.route('/enroll_class', methods=['GET', 'POST'])
 def enroll_class():
@@ -463,7 +490,7 @@ def enroll_class():
 
         if not enrollment_token:
             flash('Invalid request. Please provide the enrollment token.')
-            return redirect(url_for('siswa_dashboard'))
+            return redirect(url_for('enroll_class'))
 
         # Cek apakah token valid di tabel kelas_ajar
         selected_class = kelas_ajar.query.filter_by(token=enrollment_token).first()
@@ -480,14 +507,71 @@ def enroll_class():
                 db.session.commit()
                 flash('Successfully enrolled in the class!')
         else:
-            flash('Invalid token. Please check and try again.')
+            error = 'Token yang dimasukkan salah. Silakan coba lagi.'
+            return render_template('siswa/enroll_class.html', error=error)
 
         return redirect(url_for('siswa_dashboard'))
 
     # Handle GET request
     return render_template('siswa/enroll_class.html')
 
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'id' not in session:
+        return redirect(url_for('login'))
 
+    user_id = session['id']
+    user = User.query.get(user_id)
+
+    if request.method == 'POST':
+        if 'update_info' in request.form:
+            # Update fullname and email
+            new_fullname = request.form.get('fullname')
+            new_email = request.form.get('email')
+            
+            updates = []
+
+            if new_fullname and new_fullname != user.fullname:
+                user.fullname = new_fullname
+                updates.append('full name')
+
+            if new_email and new_email != user.email:
+                if User.query.filter_by(email=new_email).first():
+                    flash('Email already in use.', 'danger')
+                else:
+                    user.email = new_email
+                    updates.append('email')
+
+            if updates:
+                if len(updates) == 1:
+                    flash(f'Your {updates[0]} has been updated successfully.', 'success')
+                else:
+                    flash('Your personal information has been updated successfully.', 'success')
+            else:
+                flash('No changes were made to your personal information.', 'info')
+
+        elif 'change_password' in request.form:
+            # Update password
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+            if current_password and new_password and confirm_password:
+                if check_password_hash(user.password, current_password):
+                    if new_password == confirm_password:
+                        user.password = generate_password_hash(new_password)
+                        flash('Password updated successfully.', 'success')
+                    else:
+                        flash('New passwords do not match.', 'danger')
+                else:
+                    flash('Current password is incorrect.', 'danger')
+            else:
+                flash('All password fields are required.', 'danger')
+
+        db.session.commit()
+        return redirect(url_for('profile'))
+
+    return render_template('siswa/profile.html', user=user)
 
 if __name__ == '__main__':
     app.run(debug=True)

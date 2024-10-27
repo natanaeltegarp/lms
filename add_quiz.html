@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet"
+        id="bootstrap-css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+    <title>Tambah Kuis - {{ selected_class.nama_mapel }}</title>
+</head>
+<body>
+    <h1>Tambah Kuis Baru untuk Kelas: {{ selected_class.nama_mapel }}</h1>
+    <form action="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}" method="post">
+        <label for="judul_kuis">Judul Kuis:</label><br>
+        <input type="text" id="judul_kuis" name="judul_kuis" required><br><br>
+        <input type="datetime-local" id="batas_waktu" name="batas_waktu"><br><br>
+        <input type="submit" value="Tambah Kuis">
+    </form>
+
+    <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}">Kembali ke Daftar Kuis</a>
+</body>
+</html>

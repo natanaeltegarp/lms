@@ -1,20 +1,87 @@
 {% extends 'siswa/kelas_tempplate.html' %}
 
 {% block title %}
-Detail Kuis
+{{ selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }}
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2>{{ selected_quiz.judul_kuis }}</h2>
-    <form method="POST">
-        {% for soal in soal_list %}
-        <div class="form-group">
-            <label>{{ loop.index }}. {{ soal.pertanyaan }}</label>
-            <textarea class="form-control" name="jawaban_{{ soal.id_soal }}" rows="3" required></textarea>
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>{{ selected_quiz.judul_kuis }}</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{{ url_for('siswa_dashboard') }}">Home</a></li>
+                        <li class="breadcrumb-item"><a
+                                href="{{ url_for('siswa_class_quizzes', class_id=selected_class.id_kelas) }}">{{
+                                selected_class.nama_mapel }}</a></li>
+                        <li class="breadcrumb-item active">{{ selected_quiz.judul_kuis }}</li>
+                    </ol>
+                </div>
+            </div>
         </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Kirim Jawaban</button>
-    </form>
+    </section>
+
+    <section class="content">
+        <div class=" container-fluid">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-book mr-1"></i>
+                        Kelas: {{ selected_class.nama_mapel }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+
+                    {% if not has_submitted %}
+                    <form method="POST">
+                        {% for soal in soal_list %}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    Pertanyaan {{ loop.index }}
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">{{ soal.pertanyaan }}</p>
+                                <div class="form-group">
+                                    <label for="jawaban_{{ soal.id_soal }}">Jawaban Anda:</label>
+                                    <textarea class="form-control" id="jawaban_{{ soal.id_soal }}"
+                                        name="jawaban_{{ soal.id_soal }}" rows="3" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-paper-plane mr-2"></i>Submit Jawaban
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info" role="alert">
+                        <h4 class="alert-heading"><i class="fas fa-info-circle mr-2"></i>Kuis Telah Diselesaikan</h4>
+                        <p>Anda telah mengirimkan jawaban untuk kuis ini. Terima kasih atas partisipasi Anda!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
 {% endblock %}

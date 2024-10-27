@@ -1,15 +1,13 @@
 {% extends 'siswa/siswa_dashboard.html' %}
 
-{% block title %}
-Dashboard
-{% endblock %}
+{% block title %}Dashboard Siswa{% endblock %}
 
 {% block content %}
 <div class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">Dashboard Siswa</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -23,36 +21,55 @@ Dashboard
 
 <div class="content">
     <div class="container-fluid">
+        <!-- Info Boxes -->
+        <div class="row">
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="info-box">
+                    <span class="info-box-icon bg-info elevation-1"><i class="fas fa-book"></i></span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">Total Kelas</span>
+                        <span class="info-box-number">{{ classes|length }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <!-- Enrolled Classes -->
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Kelas yang Diambil</h3>
+                        <h3 class="card-title">
+                            <i class="fas fa-graduation-cap mr-1"></i>
+                            Kelas yang Diambil
+                        </h3>
                     </div>
-                    <div class="card-body">
-                        <table class="table table-bordered">
+                    <div class="card-body p-0">
+                        <table class="table table-striped">
                             <thead>
                                 <tr>
-                                    <th>No</th>
+                                    <th style="width: 10px">#</th>
                                     <th>Nama Mapel</th>
+                                    <th>Kelas</th>
+                                    <th style="width: 40px">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for kelas in classes %}
                                 <tr>
-                                    <td>{{ loop.index }}</td> <!-- Menampilkan nomor urut -->
+                                    <td>{{ loop.index }}</td>
+                                    <td>{{ kelas.nama_mapel }}</td>
+                                    <td>{{ kelas.kelas }}</td>
                                     <td>
-                                        <!-- Link menuju halaman kelas -->
-                                        <a href="{{ url_for('siswa_class_quizzes', class_id=kelas.id_kelas) }}">
-                                            {{ kelas.nama_mapel }}
+                                        <a href="{{ url_for('siswa_class_quizzes', class_id=kelas.id_kelas) }}"
+                                            class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> Lihat Detail
                                         </a>
                                     </td>
                                 </tr>
-
                                 {% else %}
                                 <tr>
-                                    <td colspan="2" class="text-center">Belum ada kelas yang diambil</td>
+                                    <td colspan="4" class="text-center">Belum ada kelas yang diambil</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -63,5 +80,4 @@ Dashboard
         </div>
     </div>
 </div>
-
 {% endblock %}
