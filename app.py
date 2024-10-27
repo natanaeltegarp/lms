@@ -9,16 +9,16 @@ import re
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
-DB_NAME = "coba"
+DB_NAME = "lms"
 DB_USER = "postgres"
-DB_PASS = "Indonesia09"
+DB_PASS = "postgres"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -268,7 +268,7 @@ def guru_dashboard():
 
     user_id = session['id']
     kelas_list = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
-    return render_template('guru/guru_dashboard.html', classes=kelas_list)
+    return render_template('guru/dashboard.html', classes=kelas_list)
 
 @app.route('/guru/add_class', methods=['GET', 'POST'])
 def add_class():
@@ -326,8 +326,27 @@ def add_quiz(class_id):
         return redirect(url_for('class_quizzes', class_id=class_id))
     return render_template('guru/add_quiz.html', selected_class=selected_class)
 
-@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET', 'POST'])
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET'])
 def quiz_detail(class_id, quiz_id):
+
+    selected_quiz = Kuis.query.get(quiz_id)
+    selected_class = kelas_ajar.query.get(class_id)
+    if not selected_quiz:
+        return "Kuis tidak ditemukan", 404
+    return render_template('guru/quiz_detail.html', selected_class=selected_class, selected_quiz=selected_quiz)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/answers', methods=['GET'])
+def quiz_answer(class_id, quiz_id):
+    selected_class = kelas_ajar.query.get(class_id)
+    selected_quiz = Kuis.query.get(quiz_id)
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+    # jawaban_list = Jawaban.query.filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
+    jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
+    return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET'])
+def quiz_edit(class_id, quiz_id):
+    selected_class = kelas_ajar.query.get(class_id)
     selected_quiz = Kuis.query.get(quiz_id)
     
     if not selected_quiz:
@@ -343,9 +362,9 @@ def quiz_detail(class_id, quiz_id):
         db.session.add(soal_baru)
         db.session.commit()
 
-        return redirect(url_for('quiz_detail', class_id=class_id, quiz_id=quiz_id))
+        return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=quiz_id))
 
-    return render_template('guru/quiz_detail.html', selected_quiz=selected_quiz, soal_list=soal_list)
+    return render_template('guru/quiz_edit.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):

@@ -1,30 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>Materi Kelas - {{ selected_class.name }}</title>
-</head>
-<body>
-    <h1>Materi Kelas {{ selected_class.name }}</h1>
-    
-    <ul>
-        {% for material in materials %}
-            <li>{{ material }}</li>
-        {% endfor %}
-    </ul>
-    
-    <!-- Button untuk mengarahkan ke halaman tambah materi -->
-    <script>
-        function add_material(){
-            window.location.href="{{ url_for('add_material', class_id=selected_class.id) }}"
-        } 
-    </script>
-    <button onclick="add_material()">Tambah Materi</button>
+{% extends 'guru/guru_dashboard.html' %}
 
-    <br>
-    <a href="{{ url_for('class_detail', class_id=selected_class.id) }}">Kembali ke Halaman Kelas</a>
-</body>
-</html>
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Dashboard</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Dashboard</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Enrolled Classes -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Materi Kelas: {{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            {% for material in materials %}
+                                <li>{{ material }}</li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <!-- Button untuk mengarahkan ke halaman tambah materi -->
+                        <script>
+                            function add_material(){
+                                window.location.href="{{ url_for('add_material', class_id=selected_class.id) }}"
+                            } 
+                        </script>
+                        <button onclick="add_material()" class="btn btn-primary">Tambah Materi</button>
+                    
+                        <br>
+                        <a href="{{ url_for('class_detail', class_id=selected_class.id) }}">Kembali ke Halaman Kelas</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
