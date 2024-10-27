@@ -33,6 +33,7 @@ class User(db.Model):
     role = db.Column(db.String(10), nullable=False)
     nisn_or_nuptk = db.Column(db.String(50), nullable=False)
     is_accepted = db.Column(db.Boolean, default=False)
+    
 
 class kelas_ajar(db.Model):
     __tablename__ = 'kelas_ajar'
@@ -52,6 +53,16 @@ class Kuis(db.Model):
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
     batas_waktu = db.Column(db.DateTime, nullable=True)
+
+class Materi(db.Model):
+    __tablename__ = 'materi'
+    id_materi = db.Column(db.Integer, primary_key=True)
+    id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
+    nama_materi = db.Column(db.String(255), nullable=False)
+    nama_guru = db.Column(db.String(255), nullable=False)
+    file_materi = db.Column(db.String(255), nullable=False)  # Nama file untuk materi
+
+    kelas = db.relationship('kelas_ajar', backref='materi', lazy=True)
 
 class Soal(db.Model):
     __tablename__='soal'
@@ -459,6 +470,25 @@ def siswa_quiz_detail(class_id, quiz_id):
         has_submitted = True  # Update has_submitted status
 
     return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, selected_class=selected_class,soal_list=soal_list, has_submitted=has_submitted)
+
+@app.route('/siswa/class/<int:class_id>/materi', methods=['GET'])
+def siswa_class_materi(class_id):
+    # Mengambil informasi materi berdasarkan ID kelas
+    materi_list = Materi.query.filter_by(id_kelas=class_id).all()
+    
+    # Mengambil informasi kelas yang dipilih
+    selected_class = kelas_ajar.query.get(class_id)  # Ganti 'Kelas' dengan model yang sesuai
+
+    # Menentukan pesan untuk ditampilkan jika tidak ada materi
+    no_materi_message = None
+    if not materi_list:
+        no_materi_message = 'Belum ada materi yang tersedia untuk kelas ini.'
+
+    return render_template('siswa/siswa_class_materi.html', 
+                           materi_list=materi_list, 
+                           no_materi_message=no_materi_message, 
+                           selected_class=selected_class)
+
 
 @app.route('/enroll_class', methods=['GET', 'POST'])
 def enroll_class():
