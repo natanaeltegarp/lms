@@ -1,28 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.1/css/all.css">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet"
-        id="bootstrap-css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-    <title>Daftar Enrollment - {{ selected_class.nama_mapel }}</title>
-</head>
-<body>
-    <h1>Daftar Enrollment Kelas: {{ selected_class.nama_mapel }}</h1>
+{% extends 'guru/guru_dashboard.html' %}
 
-    <ul>
-        <li>Token Enrollment: {{ selected_class.token }}</li>
-        {% for user in peserta %}
-        <li>{{ user.fullname }} ({{ user.email }})</li>
-        {% else %}
-        <li>Tidak ada peserta yang terdaftar</li>
-        {% endfor %}
-    </ul>
+{% block title %}
+Dashboard
+{% endblock %}
 
-    <a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">Kembali ke Detail Kelas</a>
-</body>
-</html>
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Dashboard</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
+                    <li class="breadcrumb-item active">Daftar Peserta</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Enrolled Classes -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Peserta Kelas: {{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h3>
+                    </div>
+                    <div class="card-body">
+                        <ul>
+                            {% for user in peserta %}
+                            <li>{{ user.fullname }} ({{ user.email }})</li>
+                            {% else %}
+                            <li>Tidak ada peserta yang terdaftar</li>
+                            {% endfor %}
+                        </ul>
+                        <h5>Token Enrollment: {{ selected_class.token }}</h5>
+                    
+                        <a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">Kembali ke Detail Kelas</a>
+                    </body>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
