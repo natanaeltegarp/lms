@@ -5,7 +5,7 @@ Detail Kelas
 {% endblock %}
 
 {% block content %}
-<div class="content-header">
+<div class="content-header" style="background-color: #f8f9fa;">
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
@@ -21,29 +21,51 @@ Detail Kelas
     </div>
 </div>
 
-<div class="content">
+<div class="content" style="background-color: #f8f9fa;">
     <div class="container-fluid">
         <div class="card">
             <div class="card-header">
-                <h1>Daftar Kuis untuk Kelas: {{ selected_class.nama_mapel }}</h1>
+                <h3>Daftar Kuis untuk Kelas: {{ selected_class.nama_mapel }}</h3>
             </div>
             <div class="card-body">
                 <div class="row">
                     {% for quiz in quizzes %}
-                    <div class="col-md-4">
-                        <div class="card">
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-center">
                             <div class="card-header">
                                 <h5>{{ loop.index }}. {{ quiz.judul_kuis }}</h5>
                             </div>
                             <div class="card-body">
-                                {% if quiz_status[quiz.id_kuis] %}
-                                <span class="text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                    Sudah dikerjakan
-                                </span>
+                                {% if quiz_status[quiz.id_kuis]['has_taken'] %}
+                                <p class="text-success">
+                                    <i class="fas fa-check-circle"></i> Kuis telah dikerjakan
+                                </p>
+                                {% elif quiz.batas_waktu %}
+                                <div id="countdown_{{ quiz.id_kuis }}" class="countdown-timer"></div>
+                                <script>
+                                    var countDownDate = new Date("{{ quiz.batas_waktu.strftime('%Y-%m-%d %H:%M:%S') }}").getTime();
+                                    var x = setInterval(function () {
+                                        var now = new Date().getTime();
+                                        var distance = countDownDate - now;
+                                        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                        document.getElementById("countdown_{{ quiz.id_kuis }}").innerHTML =
+                                            hours + "h " + minutes + "m " + seconds + "s ";
+                                        if (distance < 0) {
+                                            clearInterval(x);
+                                            document.getElementById("countdown_{{ quiz.id_kuis }}").innerHTML = "Waktu Habis";
+                                            document.getElementById("quiz_link_{{ quiz.id_kuis }}").style.display = 'none';
+                                        }
+                                    }, 1000);
+                                </script>
                                 {% else %}
+                                <p>Deadline: Tidak ada batas waktu</p>
+                                {% endif %}
+
+                                {% if not quiz_status[quiz.id_kuis]['has_taken'] %}
                                 <a href="{{ url_for('siswa_quiz_detail', class_id=selected_class.id_kelas, quiz_id=quiz.id_kuis) }}"
-                                    class="btn btn-sm btn-primary">
+                                    class="btn btn-primary" id="quiz_link_{{ quiz.id_kuis }}">
                                     Kerjakan Kuis
                                 </a>
                                 {% endif %}
@@ -60,4 +82,12 @@ Detail Kelas
         </div>
     </div>
 </div>
+
+<style>
+    .countdown-timer {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #dc3545;
+    }
+</style>
 {% endblock %}

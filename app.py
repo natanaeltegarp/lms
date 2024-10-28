@@ -354,37 +354,56 @@ def quiz_answer(class_id, quiz_id):
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
 
-@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET'])
+# Perbaikan pada route quiz_edit
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET', 'POST'])
 def quiz_edit(class_id, quiz_id):
-    selected_class = kelas_ajar.query.get(class_id)
-    selected_quiz = Kuis.query.get(quiz_id)
+    selected_class = db.session.get(kelas_ajar, class_id)  # Menggunakan db.session.get
+    selected_quiz = db.session.get(Kuis, quiz_id)  # Menggunakan db.session.get
     
     if not selected_quiz:
-        return "Kuis tidak ditemukan", 404
+        flash('Kuis tidak ditemukan', 'danger')
+        return redirect(url_for('class_quizzes', class_id=class_id))
 
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
 
     if request.method == 'POST':
-        pertanyaan = request.form['pertanyaan']
-        kunci_jawaban = request.form['kunci_jawaban']
+        try:
+            pertanyaan = request.form['pertanyaan']
+            kunci_jawaban = request.form['kunci_jawaban']
 
-        soal_baru = Soal(id_kuis=quiz_id, pertanyaan=pertanyaan, kunci_jawaban=kunci_jawaban)
-        db.session.add(soal_baru)
-        db.session.commit()
+            if pertanyaan and kunci_jawaban:
+                soal_baru = Soal(id_kuis=quiz_id, pertanyaan=pertanyaan, kunci_jawaban=kunci_jawaban)
+                db.session.add(soal_baru)
+                db.session.commit()
+                flash('Soal berhasil ditambahkan', 'success')
+            else:
+                flash('Pertanyaan dan kunci jawaban harus diisi', 'danger')
 
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Terjadi kesalahan: {str(e)}', 'danger')
+        
         return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=quiz_id))
 
-    return render_template('guru/quiz_edit.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
+    return render_template('guru/quiz_edit.html', 
+                         selected_class=selected_class, 
+                         selected_quiz=selected_quiz, 
+                         soal_list=soal_list)
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):
-    pertanyaan = Soal.query.get(question_id)
-    if pertanyaan:
-        db.session.delete(pertanyaan)
-        db.session.commit()
-        flash('Soal berhasil dihapus', 'success')
-    else:
-        flash('Soal tidak ditemukan', 'danger')
+    try:
+        pertanyaan = db.session.get(Soal, question_id)
+        if pertanyaan:
+            db.session.delete(pertanyaan)
+            db.session.commit()
+            flash('Soal berhasil dihapus', 'success')
+        else:
+            flash('Soal tidak ditemukan', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Terjadi kesalahan saat menghapus soal: {str(e)}', 'danger')
+    
     return redirect(url_for('quiz_detail', class_id=class_id, quiz_id=quiz_id))
 
 @app.route('/guru/class/<int:class_id>/enrollment')
@@ -425,14 +444,19 @@ def siswa_class_quizzes(class_id):
 
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
     
-    # Check if the user has taken each quiz
+    # Check if the user has taken each quiz and if the deadline has passed
     quiz_status = {}
+    current_time = datetime.now()
     for quiz in quizzes:
         has_taken = Jawaban.query.join(Soal).filter(
             Jawaban.id_user == user_id,
             Soal.id_kuis == quiz.id_kuis
         ).first() is not None
-        quiz_status[quiz.id_kuis] = has_taken
+        is_deadline_passed = quiz.batas_waktu and current_time > quiz.batas_waktu
+        quiz_status[quiz.id_kuis] = {
+            'has_taken': has_taken,
+            'is_deadline_passed': is_deadline_passed
+        }
 
     return render_template('siswa/siswa_quiz.html',  quizzes=quizzes, selected_class=selected_class, quiz_status=quiz_status)
 
