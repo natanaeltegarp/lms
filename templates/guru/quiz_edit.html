@@ -1,4 +1,4 @@
-{% extends 'guru/guru_dashboard.html' %}
+{% extends 'guru/dashboard_kelas.html' %}
 
 {% block title %}
 Dashboard
@@ -9,7 +9,7 @@ Dashboard
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -28,14 +28,14 @@ Dashboard
 <div class="content">
     <div class="container-fluid">
         <div class="row">
-            <!-- Enrolled Classes -->
-            <div class="col-md-6">
-                <div class="card">
+            <!-- Daftar Soal -->
+            <div class="col-md-12">
+                <div class="card mb-4">
                     <div class="card-header">
-                        <h3 class="card-title">Soal {{ selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }} - {{ selected_class.kelas }}</h3>
+                        <h3 class="card-title">Soal - {{ selected_quiz.judul_kuis }}</h3>
                     </div>
                     <div class="card-body">
-                        <table border="1">
+                        <table class="table table-bordered">
                             <thead>
                                 <tr>
                                     <th>Soal</th>
@@ -50,35 +50,38 @@ Dashboard
                                     <td>{{ soal.kunci_jawaban }}</td>
                                     <td>
                                         <form action="{{ url_for('delete_question', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis, question_id=soal.id_soal) }}" method="post" style="display:inline;">
-                                            <button type="submit" onclick="return confirm('Apakah Anda yakin ingin menghapus soal ini?')" class="btn btn-danger">Hapus</button>
+                                            <button type="submit" onclick="return confirm('Apakah Anda yakin ingin menghapus soal ini?')" class="btn btn-danger btn-sm">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>
                                 {% else %}
                                 <tr>
-                                    <td colspan="2">Belum ada soal ditambahkan</td>
+                                    <td colspan="3" class="text-center">Belum ada soal ditambahkan</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
+
+                <!-- Form Tambah Soal Baru -->
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Tambah Soal Baru</h3>
                     </div>
                     <div class="card-body">
                         <form action="" method="post">
-                            <label for="pertanyaan">Soal:</label><br>
-                            <textarea id="pertanyaan" name="pertanyaan" rows="4" cols="50" required></textarea><br><br>
-                    
-                            <label for="kunci_jawaban">Kunci Jawaban:</label><br>
-                            <textarea type="text" id="kunci_jawaban" name="kunci_jawaban" rows="4" cols="50" required></textarea><br><br>
-                    
-                            <input type="submit" value="Tambah Soal" class="btn btn-primary">
+                            <div class="form-group">
+                                <label for="pertanyaan">Soal:</label>
+                                <textarea id="pertanyaan" name="pertanyaan" class="form-control" rows="4" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="kunci_jawaban">Kunci Jawaban:</label>
+                                <textarea id="kunci_jawaban" name="kunci_jawaban" class="form-control" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Tambah Soal</button>
+                            <a href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-secondary ml-2">Kembali ke Detail Kuis</a>
                         </form>
-                    
-                        <a href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=selected_quiz.id_kuis) }}">Kembali ke Detail Kuis</a>
                     </div>
                 </div>
             </div>

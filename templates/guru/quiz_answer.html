@@ -1,4 +1,4 @@
-{% extends 'guru/guru_dashboard.html' %}
+{% extends 'guru/dashboard_kelas.html' %}
 
 {% block title %}
 Dashboard
@@ -9,7 +9,7 @@ Dashboard
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -28,15 +28,14 @@ Dashboard
 <div class="content">
     <div class="container-fluid">
         <div class="row">
-            <!-- Enrolled Classes -->
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Detail Kuis: {{ selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }} - {{ selected_class.kelas }}</h3>
+                        <h3 class="card-title">Jawaban - {{ selected_quiz.judul_kuis }}</h3>
                     </div>
                     <div class="card-body">
-                        <table border="1">
-                            <thead>
+                        <table class="table table-bordered table-striped">
+                            <thead class="thead-dark">
                                 <tr>
                                     <th>Soal</th>
                                     <th>Nama Siswa</th>
@@ -45,27 +44,29 @@ Dashboard
                             </thead>
                             <tbody>
                                 {% for soal in soal_list %}
-                                <tr>
-                                    <td>{{ soal.pertanyaan }}</td>
-                                            {% for jawaban, siswa in jawaban_list if jawaban.id_soal == soal.id_soal %}
-                                                <td>{{ siswa.fullname }}</td>
-                                                <td>{{ jawaban.jawaban }}</td>
-                                            {% else %}
+                                    {% set ada_jawaban = false %}
+                                    <tr>
+                                        <td rowspan="{{ jawaban_list | selectattr('id_soal', 'equalto', soal.id_soal) | list | length or 1 }}">{{ soal.pertanyaan }}</td>
+                                        {% for jawaban, siswa in jawaban_list if jawaban.id_soal == soal.id_soal %}
+                                            {% set ada_jawaban = true %}
+                                        <td>{{ siswa.fullname }}</td>
+                                        <td>{{ jawaban.jawaban }}</td>
+                                        {% endfor %}
+                                        {% if not ada_jawaban %}
                                             <tr>
-                                                <td>{{ siswa.fullname }}</td>
-                                                <td>Belum ada jawaban</td>
+                                                <td colspan="3" class="text-center">Belum ada jawaban</td>
                                             </tr>
-                                            {% endfor %}
-                                </tr>
+                                        {% endif %}
+                                    </tr>
                                 {% else %}
-                                <tr>
-                                    <td colspan="2">Belum ada soal</td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="3" class="text-center">Belum ada soal</td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
-                    
-                        <a href="{{ url_for('quiz_detail', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}">Kembali</a>
+
+                        <a href="{{ url_for('quiz_detail', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-secondary mt-3">Kembali</a>
                     </div>
                 </div>
             </div>

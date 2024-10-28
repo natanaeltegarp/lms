@@ -9,7 +9,7 @@ Dashboard
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">Tambah Kelas Baru</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -24,22 +24,27 @@ Dashboard
 
 <div class="content">
     <div class="container-fluid">
-        <div class="row">
-            <!-- Enrolled Classes -->
+        <div class="row justify-content-center">
+            <!-- Form Tambah Kelas -->
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header">
+                    <div class="card-header bg-primary text-white">
                         <h3 class="card-title">Tambah Kelas</h3>
                     </div>
                     <div class="card-body">
-                        <body>
-                            <form action="{{ url_for('add_class') }}" method="post">
-                                <input type="text" name="nama_mapel" placeholder="Nama Mapel" required>
-                                <input type="text" name="kelas" placeholder="Kelas" required>
-                                <button type="submit" class="btn btn-primary">Tambah Kelas</button>
-                            </form>
-                            <a href="{{ url_for('guru_dashboard') }}">Kembali ke Dashboard</a>
-                        </body>
+                        <form action="{{ url_for('add_class') }}" method="post">
+                            <div class="form-group">
+                                <label for="nama_mapel">Nama Mapel</label>
+                                <input type="text" id="nama_mapel" name="nama_mapel" class="form-control" placeholder="Nama Mata Pelajaran" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="kelas">Kelas</label>
+                                <input type="text" id="kelas" name="kelas" class="form-control" placeholder="Kelas" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">Tambah Kelas</button>
+                        </form>
+
+                        <a href="{{ url_for('guru_dashboard') }}" class="btn btn-secondary mt-3">Kembali ke Dashboard</a>
                     </div>
                 </div>
             </div>
