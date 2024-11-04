@@ -338,7 +338,7 @@ def quiz_detail(class_id, quiz_id):
 def display_batas_waktu(batas_waktu):
     if batas_waktu is None:
         return "Tidak ada batas waktu"
-    return batas_waktu.strftime('%Y-%m-%d %H:%M:%S %Z') 
+    return batas_waktu.strftime('%d-%m-%Y %H:%M') 
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/answers', methods=['GET'])
 def quiz_answer(class_id, quiz_id):
