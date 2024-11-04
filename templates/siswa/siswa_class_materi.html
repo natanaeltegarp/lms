@@ -1,0 +1,59 @@
+{% extends 'siswa/kelas_tempplate.html' %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Materi Kelas {{ selected_class.nama_kelas }}</h1>
+            </div><!-- /.col -->
+        </div><!-- /.row -->
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content-header -->
+
+<!-- Main content -->
+<div class="content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Daftar Materi</h3>
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+                {% if no_materi_message %}
+                <div class="alert alert-warning" role="alert">
+                    {{ no_materi_message }}
+                </div>
+                {% else %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Nama Guru</th>
+                            <th>Nama Materi</th>
+                            <th>File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for materi in materi_list %}
+                        <tr>
+                            <td>{{ materi.guru.fullname }}</td> <!-- Accessing the teacher's name -->
+                            <td>{{ materi.nama_materi }}</td>
+                            <td>
+                                <a href="{{ url_for('static', filename='uploads/' + materi.file_materi) }}"
+                                    target="_blank">
+                                    Lihat/Download
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+            <!-- /.card-body -->
+        </div>
+    </div><!-- /.container-fluid -->
+</div>
+<!-- /.content -->
+{% endblock %}

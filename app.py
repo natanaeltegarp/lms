@@ -9,16 +9,16 @@ import re
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
-DB_NAME = "lms"
+DB_NAME = "coba"
 DB_USER = "postgres"
-DB_PASS = "postgres"
+DB_PASS = "Indonesia09"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -33,6 +33,7 @@ class User(db.Model):
     role = db.Column(db.String(10), nullable=False)
     nisn_or_nuptk = db.Column(db.String(50), nullable=False)
     is_accepted = db.Column(db.Boolean, default=False)
+    
 
 class kelas_ajar(db.Model):
     __tablename__ = 'kelas_ajar'
@@ -52,6 +53,16 @@ class Kuis(db.Model):
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
     batas_waktu = db.Column(db.DateTime(timezone=True), nullable=True)
+
+class Materi(db.Model):
+    __tablename__ = 'materi'
+    id_materi = db.Column(db.Integer, primary_key=True)
+    id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
+    nama_materi = db.Column(db.String(255), nullable=False)
+    nama_guru = db.Column(db.String(255), nullable=False)
+    file_materi = db.Column(db.String(255), nullable=False)  # Nama file untuk materi
+
+    kelas = db.relationship('kelas_ajar', backref='materi', lazy=True)
 
 class Soal(db.Model):
     __tablename__='soal'
@@ -77,6 +88,11 @@ class Jawaban(db.Model):
     def __repr__(self):
         return f'<Jawaban {self.id_jawaban}>'
 
+@app.template_filter('display_batas_waktu')
+def display_batas_waktu(value):
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M:%S')  # Adjust format as needed
+    return value
 
 @app.route('/')
 def index():
@@ -349,7 +365,7 @@ def quiz_answer(class_id, quiz_id):
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
 
-@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET'])
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET', 'POST'])
 def quiz_edit(class_id, quiz_id):
     selected_class = kelas_ajar.query.get(class_id)
     selected_quiz = Kuis.query.get(quiz_id)
@@ -373,13 +389,18 @@ def quiz_edit(class_id, quiz_id):
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):
-    pertanyaan = Soal.query.get(question_id)
-    if pertanyaan:
-        db.session.delete(pertanyaan)
-        db.session.commit()
-        flash('Soal berhasil dihapus', 'success')
-    else:
-        flash('Soal tidak ditemukan', 'danger')
+    try:
+        pertanyaan = db.session.get(Soal, question_id)
+        if pertanyaan:
+            db.session.delete(pertanyaan)
+            db.session.commit()
+            flash('Soal berhasil dihapus', 'success')
+        else:
+            flash('Soal tidak ditemukan', 'danger')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Terjadi kesalahan saat menghapus soal: {str(e)}', 'danger')
+    
     return redirect(url_for('quiz_detail', class_id=class_id, quiz_id=quiz_id))
 
 @app.route('/guru/class/<int:class_id>/enrollment')
@@ -412,7 +433,6 @@ def siswa_class_quizzes(class_id):
         flash('Kelas tidak ditemukan', 'danger')
         return redirect(url_for('siswa_dashboard'))
 
-    # Check if user is enrolled in the class
     is_enrolled = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
     if not is_enrolled:
         flash('Anda tidak terdaftar di kelas ini.', 'warning')
@@ -420,16 +440,23 @@ def siswa_class_quizzes(class_id):
 
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
     
-    # Check if the user has taken each quiz
     quiz_status = {}
+    current_time = datetime.now()
     for quiz in quizzes:
         has_taken = Jawaban.query.join(Soal).filter(
             Jawaban.id_user == user_id,
             Soal.id_kuis == quiz.id_kuis
         ).first() is not None
-        quiz_status[quiz.id_kuis] = has_taken
+        
+        quiz_status[quiz.id_kuis] = {
+            'has_taken': has_taken,
+            'is_deadline_passed': quiz.batas_waktu and current_time > quiz.batas_waktu
+        }
 
-    return render_template('siswa/siswa_quiz.html',  quizzes=quizzes, selected_class=selected_class, quiz_status=quiz_status)
+    return render_template('siswa/siswa_quiz.html', 
+                         quizzes=quizzes, 
+                         selected_class=selected_class, 
+                         quiz_status=quiz_status)
 
 @app.route('/siswa/dashboard_quiz', methods=['GET'])
 def dashboard_quiz():
@@ -483,6 +510,25 @@ def siswa_quiz_detail(class_id, quiz_id):
         has_submitted = True  # Update has_submitted status
 
     return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, selected_class=selected_class,soal_list=soal_list, has_submitted=has_submitted)
+
+@app.route('/siswa/class/<int:class_id>/materi', methods=['GET'])
+def siswa_class_materi(class_id):
+    # Mengambil informasi materi berdasarkan ID kelas
+    materi_list = Materi.query.filter_by(id_kelas=class_id).all()
+    
+    # Mengambil informasi kelas yang dipilih
+    selected_class = kelas_ajar.query.get(class_id)  # Ganti 'Kelas' dengan model yang sesuai
+
+    # Menentukan pesan untuk ditampilkan jika tidak ada materi
+    no_materi_message = None
+    if not materi_list:
+        no_materi_message = 'Belum ada materi yang tersedia untuk kelas ini.'
+
+    return render_template('siswa/siswa_class_materi.html', 
+                           materi_list=materi_list, 
+                           no_materi_message=no_materi_message, 
+                           selected_class=selected_class)
+
 
 @app.route('/enroll_class', methods=['GET', 'POST'])
 def enroll_class():
