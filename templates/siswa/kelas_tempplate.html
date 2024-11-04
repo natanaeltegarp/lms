@@ -20,18 +20,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
-<body class="hold-transition sidebar-mini">
+<body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
 
-        <!-- Navbar -->
-        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-            <!-- Navbar content -->
-        </nav>
-        <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
-
             <!-- Sidebar -->
             <div class="sidebar">
                 <!-- Sidebar user panel -->
@@ -39,7 +33,7 @@
                     <div class="image">
                         <a href="{{ url_for('profile') }}">
                             <img src="{{ url_for('static', filename='dist/img/laki.jpg') }}"
-                                class="img-circle elevation-2" alt="User Image">
+                                class="img-circle elevation-2" alt="User   Image">
                         </a>
                     </div>
                     <div class="info">
@@ -61,7 +55,8 @@
 
                         <!-- Materi -->
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="{{ url_for('siswa_class_materi', class_id=selected_class.id_kelas) }}"
+                                class="nav-link">
                                 <i class="nav-icon fas fa-book"></i>
                                 <p>Materi</p>
                             </a>
@@ -72,14 +67,6 @@
                             <a href="#" class="nav-link">
                                 <i class="nav-icon fas fa-bullhorn"></i>
                                 <p>Pengumuman</p>
-                            </a>
-                        </li>
-
-                        <!-- Tugas -->
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="nav-icon fas fa-tasks"></i>
-                                <p>Tugas</p>
                             </a>
                         </li>
 
@@ -107,10 +94,16 @@
         </aside>
 
         <!-- Content Wrapper. Contains page content -->
-        <div class="content-wrapper">
-            {% block content %}
-            <!-- Konten dinamis akan dimuat di sini -->
-            {% endblock %}
+        <div class="content-wrapper" style="overflow: auto;">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        {% block content %}
+                        <!-- Konten dinamis akan dimuat di sini -->
+                        {% endblock %}
+                    </div>
+                </div>
+            </div>
         </div>
         <!-- /.content-wrapper -->
 
