@@ -29,46 +29,42 @@ Dashboard
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Jawaban - {{ selected_quiz.judul_kuis }}</h3>
+                {% for soal in soal_list %}
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title">Soal: {{ soal.pertanyaan }}</h5>
                     </div>
                     <div class="card-body">
+                        {% set jawaban_ada = false %}
                         <table class="table table-bordered table-striped">
                             <thead class="thead-dark">
                                 <tr>
-                                    <th>Soal</th>
                                     <th>Nama Siswa</th>
                                     <th>Jawaban Siswa</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for soal in soal_list %}
-                                    {% set ada_jawaban = false %}
+                                {% for jawaban, siswa in jawaban_list if jawaban.id_soal == soal.id_soal %}
+                                    {% set jawaban_ada = true %}
                                     <tr>
-                                        <td rowspan="{{ jawaban_list | selectattr('id_soal', 'equalto', soal.id_soal) | list | length or 1 }}">{{ soal.pertanyaan }}</td>
-                                        {% for jawaban, siswa in jawaban_list if jawaban.id_soal == soal.id_soal %}
-                                            {% set ada_jawaban = true %}
                                         <td>{{ siswa.fullname }}</td>
                                         <td>{{ jawaban.jawaban }}</td>
-                                        {% endfor %}
-                                        {% if not ada_jawaban %}
-                                            <tr>
-                                                <td colspan="3" class="text-center">Belum ada jawaban</td>
-                                            </tr>
-                                        {% endif %}
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td colspan="3" class="text-center">Belum ada soal</td>
                                     </tr>
                                 {% endfor %}
+                                {% if not jawaban_ada %}
+                                    <tr>
+                                        <td colspan="2" class="text-center text-muted">Belum ada jawaban untuk soal ini</td>
+                                    </tr>
+                                {% endif %}
                             </tbody>
                         </table>
-
-                        <a href="{{ url_for('quiz_detail', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-secondary mt-3">Kembali</a>
                     </div>
                 </div>
+                {% else %}
+                <p class="text-center text-muted">Belum ada soal yang tersedia.</p>
+                {% endfor %}
+                
+                <a href="{{ url_for('quiz_detail', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-secondary mt-3">Kembali</a>
             </div>
         </div>
     </div>
