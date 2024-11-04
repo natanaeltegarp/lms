@@ -129,3 +129,17 @@ span.input-group-addon i {
 .site-header a {
     color: #fff;
 }
+
+@media (max-width: 768px) {
+    .main-sidebar {
+        position: fixed;
+        z-index: 1030;
+        width: 100%;
+        height: auto;
+        bottom: 0;
+    }
+
+    .content-wrapper {
+        margin-left: 0 !important;
+    }
+}

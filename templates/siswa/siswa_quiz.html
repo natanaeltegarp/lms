@@ -1,7 +1,7 @@
 {% extends 'siswa/kelas_tempplate.html' %}
 
 {% block title %}
-Detail Kelas
+Quis
 {% endblock %}
 
 {% block content %}
@@ -9,12 +9,12 @@ Detail Kelas
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Detail Kelas</h1>
+                <h1 class="m-0">Quis</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
                     <li class="breadcrumb-item"><a href="{{ url_for('siswa_dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Detail Kelas</li>
+                    <li class="breadcrumb-item active">Quis</li>
                 </ol>
             </div>
         </div>
@@ -25,7 +25,7 @@ Detail Kelas
     <div class="container-fluid">
         <div class="card">
             <div class="card-header">
-                <h3>Daftar Kuis untuk Kelas: {{ selected_class.nama_mapel }}</h3>
+                <h3>Daftar Quis untuk Kelas: {{ selected_class.nama_mapel }}</h3>
             </div>
             <div class="card-body">
                 <div class="row">
@@ -41,29 +41,58 @@ Detail Kelas
                                     <i class="fas fa-check-circle"></i> Kuis telah dikerjakan
                                 </p>
                                 {% elif quiz.batas_waktu %}
-                                <div id="countdown_{{ quiz.id_kuis }}" class="countdown-timer"></div>
+                                <div id="countdown_{{ quiz.id_kuis }}" class="countdown-timer">
+                                    Menghitung waktu...
+                                </div>
                                 <script>
-                                    var countDownDate = new Date("{{ quiz.batas_waktu.strftime('%Y-%m-%d %H:%M:%S') }}").getTime();
-                                    var x = setInterval(function () {
-                                        var now = new Date().getTime();
-                                        var distance = countDownDate - now;
-                                        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                                        document.getElementById("countdown_{{ quiz.id_kuis }}").innerHTML =
-                                            hours + "h " + minutes + "m " + seconds + "s ";
-                                        if (distance < 0) {
-                                            clearInterval(x);
-                                            document.getElementById("countdown_{{ quiz.id_kuis }}").innerHTML = "Waktu Habis";
-                                            document.getElementById("quiz_link_{{ quiz.id_kuis }}").style.display = 'none';
+                                    (function () {
+                                        var quizId = "{{ quiz.id_kuis }}";
+                                        var deadlineStr = "{{ quiz.batas_waktu.strftime('%Y-%m-%d %H:%M:%S') }}";
+                                        var countDownDate = new Date(deadlineStr).getTime();
+                                        var countdownElement = document.getElementById("countdown_" + quizId);
+                                        var quizLinkElement = document.getElementById("quiz_link_" + quizId);
+
+                                        function updateCountdown() {
+                                            var now = new Date().getTime();
+                                            var distance = countDownDate - now;
+
+                                            if (distance < 0) {
+                                                if (countdownElement) {
+                                                    countdownElement.innerHTML = "Waktu Habis";
+                                                }
+                                                if (quizLinkElement) {
+                                                    quizLinkElement.style.display = 'none';
+                                                }
+                                                return;
+                                            }
+
+                                            var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                                            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                                            var displayText = "";
+                                            if (days > 0) displayText += days + "d ";
+                                            if (hours > 0) displayText += hours + "h ";
+                                            displayText += minutes + "m " + seconds + "s";
+
+                                            if (countdownElement) {
+                                                countdownElement.innerHTML = displayText;
+                                            }
                                         }
-                                    }, 1000);
+
+                                        // Initial update
+                                        updateCountdown();
+                                        // Update every second
+                                        setInterval(updateCountdown, 1000);
+                                    })();
                                 </script>
                                 {% else %}
                                 <p>Deadline: Tidak ada batas waktu</p>
                                 {% endif %}
 
-                                {% if not quiz_status[quiz.id_kuis]['has_taken'] %}
+                                {% if not quiz_status[quiz.id_kuis]['has_taken'] and not
+                                quiz_status[quiz.id_kuis]['is_deadline_passed'] %}
                                 <a href="{{ url_for('siswa_quiz_detail', class_id=selected_class.id_kelas, quiz_id=quiz.id_kuis) }}"
                                     class="btn btn-primary" id="quiz_link_{{ quiz.id_kuis }}">
                                     Kerjakan Kuis
@@ -88,6 +117,7 @@ Detail Kelas
         font-size: 1.2em;
         font-weight: bold;
         color: #dc3545;
+        margin-bottom: 10px;
     }
 </style>
 {% endblock %}

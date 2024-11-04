@@ -37,7 +37,7 @@
                     <tbody>
                         {% for materi in materi_list %}
                         <tr>
-                            <td>{{ materi.nama_guru }}</td>
+                            <td>{{ materi.guru.fullname }}</td> <!-- Accessing the teacher's name -->
                             <td>{{ materi.nama_materi }}</td>
                             <td>
                                 <a href="{{ url_for('static', filename='uploads/' + materi.file_materi) }}"

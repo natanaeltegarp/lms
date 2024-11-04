@@ -88,6 +88,11 @@ class Jawaban(db.Model):
     def __repr__(self):
         return f'<Jawaban {self.id_jawaban}>'
 
+@app.template_filter('display_batas_waktu')
+def display_batas_waktu(value):
+    if isinstance(value, datetime):
+        return value.strftime('%Y-%m-%d %H:%M:%S')  # Adjust format as needed
+    return value
 
 @app.route('/')
 def index():
@@ -345,12 +350,6 @@ def quiz_detail(class_id, quiz_id):
         return "Kuis tidak ditemukan", 404
     return render_template('guru/quiz_detail.html', selected_class=selected_class, selected_quiz=selected_quiz)
 
-@app.template_filter('display_batas_waktu')
-def display_batas_waktu(batas_waktu):
-    if batas_waktu is None:
-        return "Tidak ada batas waktu"
-    return batas_waktu.strftime('%Y-%m-%d %H:%M:%S %Z') 
-
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/answers', methods=['GET'])
 def quiz_answer(class_id, quiz_id):
     selected_class = kelas_ajar.query.get(class_id)
@@ -360,41 +359,27 @@ def quiz_answer(class_id, quiz_id):
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
 
-# Perbaikan pada route quiz_edit
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET', 'POST'])
 def quiz_edit(class_id, quiz_id):
-    selected_class = db.session.get(kelas_ajar, class_id)  # Menggunakan db.session.get
-    selected_quiz = db.session.get(Kuis, quiz_id)  # Menggunakan db.session.get
+    selected_class = kelas_ajar.query.get(class_id)
+    selected_quiz = Kuis.query.get(quiz_id)
     
     if not selected_quiz:
-        flash('Kuis tidak ditemukan', 'danger')
-        return redirect(url_for('class_quizzes', class_id=class_id))
+        return "Kuis tidak ditemukan", 404
 
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
 
     if request.method == 'POST':
-        try:
-            pertanyaan = request.form['pertanyaan']
-            kunci_jawaban = request.form['kunci_jawaban']
+        pertanyaan = request.form['pertanyaan']
+        kunci_jawaban = request.form['kunci_jawaban']
 
-            if pertanyaan and kunci_jawaban:
-                soal_baru = Soal(id_kuis=quiz_id, pertanyaan=pertanyaan, kunci_jawaban=kunci_jawaban)
-                db.session.add(soal_baru)
-                db.session.commit()
-                flash('Soal berhasil ditambahkan', 'success')
-            else:
-                flash('Pertanyaan dan kunci jawaban harus diisi', 'danger')
+        soal_baru = Soal(id_kuis=quiz_id, pertanyaan=pertanyaan, kunci_jawaban=kunci_jawaban)
+        db.session.add(soal_baru)
+        db.session.commit()
 
-        except Exception as e:
-            db.session.rollback()
-            flash(f'Terjadi kesalahan: {str(e)}', 'danger')
-        
         return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=quiz_id))
 
-    return render_template('guru/quiz_edit.html', 
-                         selected_class=selected_class, 
-                         selected_quiz=selected_quiz, 
-                         soal_list=soal_list)
+    return render_template('guru/quiz_edit.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):
@@ -442,7 +427,6 @@ def siswa_class_quizzes(class_id):
         flash('Kelas tidak ditemukan', 'danger')
         return redirect(url_for('siswa_dashboard'))
 
-    # Check if user is enrolled in the class
     is_enrolled = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
     if not is_enrolled:
         flash('Anda tidak terdaftar di kelas ini.', 'warning')
@@ -450,7 +434,6 @@ def siswa_class_quizzes(class_id):
 
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
     
-    # Check if the user has taken each quiz and if the deadline has passed
     quiz_status = {}
     current_time = datetime.now()
     for quiz in quizzes:
@@ -458,13 +441,16 @@ def siswa_class_quizzes(class_id):
             Jawaban.id_user == user_id,
             Soal.id_kuis == quiz.id_kuis
         ).first() is not None
-        is_deadline_passed = quiz.batas_waktu and current_time > quiz.batas_waktu
+        
         quiz_status[quiz.id_kuis] = {
             'has_taken': has_taken,
-            'is_deadline_passed': is_deadline_passed
+            'is_deadline_passed': quiz.batas_waktu and current_time > quiz.batas_waktu
         }
 
-    return render_template('siswa/siswa_quiz.html',  quizzes=quizzes, selected_class=selected_class, quiz_status=quiz_status)
+    return render_template('siswa/siswa_quiz.html', 
+                         quizzes=quizzes, 
+                         selected_class=selected_class, 
+                         quiz_status=quiz_status)
 
 @app.route('/siswa/dashboard_quiz', methods=['GET'])
 def dashboard_quiz():
