@@ -1,4 +1,4 @@
-{% extends 'guru/guru_dashboard.html' %}
+{% extends 'guru/dashboard_kelas.html' %}
 
 {% block title %}
 Dashboard
@@ -9,7 +9,7 @@ Dashboard
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -26,33 +26,37 @@ Dashboard
 <div class="content">
     <div class="container-fluid">
         <div class="row">
-            <!-- Enrolled Classes -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Daftar Kuis Kelas: {{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h3>
-                    </div>
-                    <div class="card-body">
-                        <ul>
-                            {% for kuis in quizzes %}
-                            <li>
-                                <a href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=kuis.id_kuis) }}">{{ kuis.judul_kuis }}</a>
-                            </li>
-                            {% else %}
-                            <li>Tidak ada kuis yang ditemukan</li>
-                            {% endfor %}
-                        </ul>
-                    
-                            <script>
-                            function add_quiz(){
-                                window.location.href="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}"
-                            } 
-                        </script>
-                        <button onclick="add_quiz()" class="btn btn-primary">Tambah Kuis</button>
-                    
-                        <a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">Kembali ke Detail Kelas</a>
+            {% if quizzes %}
+                {% for kuis in quizzes %}
+                <!-- Card untuk setiap kuis -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">{{ kuis.judul_kuis }}</h3>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Batas Waktu:</strong> {{ kuis.batas_waktu or "Tidak ditentukan" }}</p>
+                            <a href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=kuis.id_kuis) }}" class="btn btn-info">Lihat Detail Kuis</a>
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-md-12">
+                    <p>Tidak ada kuis yang ditemukan</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <script>
+                    function add_quiz(){
+                        window.location.href="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}";
+                    } 
+                </script>
+                <button onclick="add_quiz()" class="btn btn-primary">Tambah Kuis</button>
+                <a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}" class="btn btn-secondary ml-2">Kembali ke Detail Kelas</a>
             </div>
         </div>
     </div>

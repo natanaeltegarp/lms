@@ -1,4 +1,4 @@
-{% extends 'guru/guru_dashboard.html' %}
+{% extends 'guru/dashboard_kelas.html' %}
 
 {% block title %}
 Dashboard
@@ -9,7 +9,7 @@ Dashboard
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
@@ -25,21 +25,36 @@ Dashboard
 <div class="content">
     <div class="container-fluid">
         <div class="row">
-            <!-- Enrolled Classes -->
+            <!-- Card untuk Kuis -->
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Detail Kelas: {{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h3>
+                        <h3 class="card-title">Kuis</h3>
                     </div>
                     <div class="card-body">
-                        <ul>
-                            <li><a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}">Kuis</a></li>
-                            <li><a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}">Daftar Peserta</a></li>
-                        </ul>
-                    
-                        <a href="{{ url_for('guru_dashboard') }}">Kembali ke Dashboard</a>
+                        <p>Kelola semua kuis untuk kelas ini.</p>
+                        <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}" class="btn btn-primary">Lihat Kuis</a>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Card untuk Daftar Peserta -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Peserta</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Lihat dan kelola daftar peserta yang terdaftar di kelas ini.</p>
+                        <a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}" class="btn btn-primary">Lihat Daftar Peserta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <a href="{{ url_for('guru_dashboard') }}" class="btn btn-secondary">Kembali ke Dashboard</a>
             </div>
         </div>
     </div>
