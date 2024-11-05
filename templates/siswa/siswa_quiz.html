@@ -40,6 +40,7 @@ Quis
                                 <p class="text-success">
                                     <i class="fas fa-check-circle"></i> Kuis telah dikerjakan
                                 </p>
+                                <p>Nilai Anda: <strong>{{ quiz_status[quiz.id_kuis]['score'] or 'N/A' }}</strong></p>
                                 {% elif quiz.batas_waktu %}
                                 <div id="countdown_{{ quiz.id_kuis }}" class="countdown-timer">
                                     Menghitung waktu...

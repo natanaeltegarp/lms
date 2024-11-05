@@ -34,6 +34,19 @@ class User(db.Model):
     nisn_or_nuptk = db.Column(db.String(50), nullable=False)
     is_accepted = db.Column(db.Boolean, default=False)
     
+class UserScore(db.Model):
+    __tablename__ = 'user_scores'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    kuis_id = db.Column(db.Integer, db.ForeignKey('kuis.id_kuis'), nullable=False)
+    score = db.Column(db.String(1), nullable=True)  # Nilai dalam bentuk huruf A-E
+    
+    # Relationship
+    user = db.relationship('User', backref=db.backref('user_scores', lazy=True))
+    kuis = db.relationship('Kuis', backref=db.backref('user_scores', lazy=True))
+    
+    __table_args__ = (db.UniqueConstraint('user_id', 'kuis_id', name='_user_kuis_uc'),)
+
 
 class kelas_ajar(db.Model):
     __tablename__ = 'kelas_ajar'
@@ -53,6 +66,11 @@ class Kuis(db.Model):
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     judul_kuis = db.Column(db.String(255), nullable=False)
     batas_waktu = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    def __init__(self, id_kelas, judul_kuis, batas_waktu=None, score=None):
+        self.id_kelas = id_kelas
+        self.judul_kuis = judul_kuis
+        self.batas_waktu = batas_waktu
 
 class Materi(db.Model):
     __tablename__ = 'materi'
