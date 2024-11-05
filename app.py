@@ -368,6 +368,12 @@ def quiz_detail(class_id, quiz_id):
         return "Kuis tidak ditemukan", 404
     return render_template('guru/quiz_detail.html', selected_class=selected_class, selected_quiz=selected_quiz)
 
+@app.template_filter('display_batas_waktu')
+def display_batas_waktu(batas_waktu):
+    if batas_waktu is None:
+        return "Tidak ada batas waktu"
+    return batas_waktu.strftime('%d-%m-%Y %H:%M') 
+
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/answers', methods=['GET'])
 def quiz_answer(class_id, quiz_id):
     selected_class = kelas_ajar.query.get(class_id)

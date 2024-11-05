@@ -55,9 +55,27 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ url_for('siswa_class_quizzes', class_id=selected_class.id_kelas) }}"
+                            <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}"
                                 class="nav-link">
                                 <p>Daftar Kuis</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}"
+                                class="nav-link">
+                                <p>Daftar Peserta</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href=""
+                                class="nav-link">
+                                <p>Materi</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href=""
+                                class="nav-link">
+                                <p>Pengumuman</p>
                             </a>
                         </li>
                         <li class="nav-item">
