@@ -98,6 +98,7 @@ class Jawaban(db.Model):
     id_user = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Foreign key to users table
     id_soal = db.Column(db.Integer, db.ForeignKey('soal.id_soal'), nullable=False)  # Foreign key to soal table
     jawaban = db.Column(db.Text, nullable=False)  # Answer provided by the user
+    waktu_submit = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     # Relationships
     user = db.relationship('User', backref=db.backref('jawaban', lazy=True))
@@ -233,7 +234,7 @@ def register():
 
 @app.route('/home')
 def home():
-    return 'Welcome to the home page!'
+    return  render_template('home/home.html')
 
 @app.route('/admin')
 def admin_dashboard():
@@ -509,25 +510,79 @@ def siswa_quiz_detail(class_id, quiz_id):
         flash('Anda tidak terdaftar di kelas ini. Silakan daftar terlebih dahulu.', 'warning')
         return redirect(url_for('siswa_dashboard'))
 
-    # Check if user has already submitted answers for this quiz
-    has_submitted = Jawaban.query.join(Soal).filter(
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+    
+    # Get previous answers and submission time if they exist
+    previous_answers = {}
+    last_submission = None
+    submitted_answers = Jawaban.query.join(Soal).filter(
         Jawaban.id_user == user_id,
         Soal.id_kuis == quiz_id
-    ).first() is not None
+    ).all()
+    
+    has_submitted = len(submitted_answers) > 0
+    
+    if has_submitted:
+        for jawaban in submitted_answers:
+            previous_answers[jawaban.id_soal] = jawaban.jawaban
+            if last_submission is None or jawaban.waktu_submit > last_submission:
+                last_submission = jawaban.waktu_submit
 
-    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+    if request.method == 'POST':
+        try:
+            current_time = datetime.now()
+            
+            # Process student's answers
+            for soal in soal_list:
+                jawaban_text = request.form.get(f'jawaban_{soal.id_soal}')
+                if jawaban_text:
+                    # Check if answer already exists
+                    existing_jawaban = Jawaban.query.filter_by(
+                        id_user=user_id,
+                        id_soal=soal.id_soal
+                    ).first()
+                    
+                    if existing_jawaban:
+                        # Update existing answer
+                        existing_jawaban.jawaban = jawaban_text
+                        existing_jawaban.waktu_submit = current_time
+                    else:
+                        # Create new answer
+                        new_jawaban = Jawaban(
+                            id_user=user_id,
+                            id_soal=soal.id_soal,
+                            jawaban=jawaban_text,
+                            waktu_submit=current_time
+                        )
+                        db.session.add(new_jawaban)
+            
+            db.session.commit()
+            
+            if has_submitted:
+                flash('Jawaban Anda berhasil diperbarui!', 'success')
+            else:
+                flash('Jawaban Anda berhasil dikirim!', 'success')
+                
+            return redirect(url_for('siswa_quiz_detail', class_id=class_id, quiz_id=quiz_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('Terjadi kesalahan saat menyimpan jawaban. Silakan coba lagi.', 'danger')
+            print(f"Error: {str(e)}")  # For debugging
 
-    if request.method == 'POST' and not has_submitted:
-        # Process student's answers
-        for soal in soal_list:
-            jawaban = request.form.get(f'jawaban_{soal.id_soal}')
-            if jawaban:
-                new_jawaban = Jawaban(id_user=user_id, id_soal=soal.id_soal, jawaban=jawaban)
-                db.session.add(new_jawaban)
-        db.session.commit()
-        has_submitted = True  # Update has_submitted status
+    # Format last submission time for display
+    formatted_last_submission = last_submission.strftime("%d %B %Y %H:%M:%S") if last_submission else None
 
-    return render_template('siswa/siswa_quiz_detail.html', selected_quiz=selected_quiz, selected_class=selected_class,soal_list=soal_list, has_submitted=has_submitted)
+    return render_template(
+        'siswa/siswa_quiz_detail.html',
+        selected_quiz=selected_quiz,
+        selected_class=selected_class,
+        soal_list=soal_list,
+        has_submitted=has_submitted,
+        previous_answers=previous_answers,
+        last_submission_time=formatted_last_submission
+    )
+
 
 @app.route('/siswa/class/<int:class_id>/materi', methods=['GET'])
 def siswa_class_materi(class_id):

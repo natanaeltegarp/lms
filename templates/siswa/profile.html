@@ -1,6 +1,8 @@
 {% extends 'siswa/siswa_dashboard.html' %}
 
-{% block title %}Profile{% endblock %}
+{% block title %}
+{{ super() }} - Profile
+{% endblock %}
 
 {% block content %}
 <div class="content-header">
@@ -70,18 +72,42 @@
                         <form method="POST" id="changePasswordForm">
                             <div class="form-group">
                                 <label for="current_password">Current Password</label>
-                                <input type="password" class="form-control" id="current_password"
-                                    name="current_password" required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="current_password"
+                                        name="current_password" required>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text"
+                                            onclick="togglePasswordVisibility('current_password', this)">
+                                            <i class="fa fa-eye" aria-hidden="true"></i>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="new_password">New Password</label>
-                                <input type="password" class="form-control" id="new_password" name="new_password"
-                                    required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="new_password" name="new_password"
+                                        required>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text"
+                                            onclick="togglePasswordVisibility('new_password', this)">
+                                            <i class="fa fa-eye" aria-hidden="true"></i>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="confirm_password">Confirm New Password</label>
-                                <input type="password" class="form-control" id="confirm_password"
-                                    name="confirm_password" required>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="confirm_password"
+                                        name="confirm_password" required>
+                                    <div class="input-group-append">
+                                        <span class="input-group-text"
+                                            onclick="togglePasswordVisibility('confirm_password', this)">
+                                            <i class="fa fa-eye" aria-hidden="true"></i>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary" name="change_password">Change
                                 Password</button>
@@ -89,10 +115,10 @@
                     </div>
                 </div>
             </div>
-        </div> <!-- /.row -->
+        </div>
     </div> <!-- /.container-fluid -->
 </section>
-{% endblock %}
+{% endblock %} <!-- Close the 'content' block -->
 
 {% block extra_css %}
 <style>
@@ -118,4 +144,23 @@
         border-color: #3a7bc8;
     }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function togglePasswordVisibility(inputId, icon) {
+        const inputField = document.getElementById(inputId);
+        const iconElement = icon.querySelector('i');
+
+        if (inputField.type === "password") {
+            inputField.type = "text";
+            iconElement.classList.remove('fa-eye');
+            iconElement.classList.add('fa-eye-slash');
+        } else {
+            inputField.type = "password";
+            iconElement.classList.remove('fa-eye-slash');
+            iconElement.classList.add('fa-eye');
+        }
+    }
+</script>
 {% endblock %}
