@@ -5,11 +5,12 @@ from datetime import datetime
 import psycopg2 
 import psycopg2.extras
 import secrets
+import random
 import re
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -18,7 +19,7 @@ db = SQLAlchemy(app)
 DB_HOST = "localhost"
 DB_NAME = "coba"
 DB_USER = "postgres"
-DB_PASS = "Indonesia09"
+DB_PASS = "postgres"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -34,20 +35,6 @@ class User(db.Model):
     nisn_or_nuptk = db.Column(db.String(50), nullable=False)
     is_accepted = db.Column(db.Boolean, default=False)
     
-class UserScore(db.Model):
-    __tablename__ = 'user_scores'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    kuis_id = db.Column(db.Integer, db.ForeignKey('kuis.id_kuis'), nullable=False)
-    score = db.Column(db.String(1), nullable=True)  # Nilai dalam bentuk huruf A-E
-    
-    # Relationship
-    user = db.relationship('User', backref=db.backref('user_scores', lazy=True))
-    kuis = db.relationship('Kuis', backref=db.backref('user_scores', lazy=True))
-    
-    __table_args__ = (db.UniqueConstraint('user_id', 'kuis_id', name='_user_kuis_uc'),)
-
-
 class kelas_ajar(db.Model):
     __tablename__ = 'kelas_ajar'
     id_kelas = db.Column(db.Integer, primary_key=True)
@@ -98,7 +85,8 @@ class Jawaban(db.Model):
     id_user = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Foreign key to users table
     id_soal = db.Column(db.Integer, db.ForeignKey('soal.id_soal'), nullable=False)  # Foreign key to soal table
     jawaban = db.Column(db.Text, nullable=False)  # Answer provided by the user
-    waktu_submit = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    # waktu_submit = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    nilai = db.Column(db.String(1), nullable=True)
 
     # Relationships
     user = db.relationship('User', backref=db.backref('jawaban', lazy=True))
@@ -344,6 +332,7 @@ def class_quizzes(class_id):
     selected_class = kelas_ajar.query.get(class_id)
     return render_template('guru/class_quizzes.html', quizzes=quizzes, selected_class=selected_class)
 
+
 @app.route('/guru/class/<int:class_id>/add_quiz', methods=['GET', 'POST'])
 def add_quiz(class_id):
     if 'id' not in session:
@@ -383,6 +372,20 @@ def quiz_answer(class_id, quiz_id):
     # jawaban_list = Jawaban.query.filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/answers/grade', methods=['POST'])
+def answer_grade(quiz_id, class_id):
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+    jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
+    grade = ['A', 'B', 'C', 'D', 'E']
+    
+    for jawaban,user in jawaban_list:
+        jawaban_obj = Jawaban.query.get(jawaban.id_jawaban)
+        jawaban_obj.nilai = random.choice(grade)
+        db.session.add(jawaban_obj)
+    
+    db.session.commit()
+    return redirect(url_for('quiz_answer', class_id=class_id, quiz_id=quiz_id))
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET', 'POST'])
 def quiz_edit(class_id, quiz_id):
