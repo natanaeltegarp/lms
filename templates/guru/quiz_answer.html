@@ -41,6 +41,7 @@ Dashboard
                                 <tr>
                                     <th>Nama Siswa</th>
                                     <th>Jawaban Siswa</th>
+                                    <th>Nilai</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -49,6 +50,7 @@ Dashboard
                                     <tr>
                                         <td>{{ siswa.fullname }}</td>
                                         <td>{{ jawaban.jawaban }}</td>
+                                        <td>{{ jawaban.nilai or "Belum dinilai" }}</td>
                                     </tr>
                                 {% endfor %}
                                 {% if not jawaban_ada %}
@@ -60,6 +62,9 @@ Dashboard
                         </table>
                     </div>
                 </div>
+                <form action="{{ url_for('answer_grade', quiz_id=selected_quiz.id_kuis, class_id=selected_class.id_kelas) }}" method="post">
+                    <button type="submit" class="btn btn-primary">Nilai Semua Jawaban</button>
+                </form>
                 {% else %}
                 <p class="text-center text-muted">Belum ada soal yang tersedia.</p>
                 {% endfor %}
