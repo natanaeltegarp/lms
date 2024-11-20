@@ -62,7 +62,7 @@
                                     <label for="jawaban_{{ soal.id_soal }}">Jawaban Anda:</label>
                                     <textarea class="form-control" id="jawaban_{{ soal.id_soal }}"
                                         name="jawaban_{{ soal.id_soal }}" rows="3"
-                                        required>{{ previous_answers[soal.id_soal] if previous_answers }}</textarea>
+                                        required>{{ previous_answers.get(soal.id_soal, '') }}</textarea>
                                 </div>
                             </div>
                         </div>

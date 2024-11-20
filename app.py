@@ -10,7 +10,7 @@ import re
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -19,7 +19,7 @@ db = SQLAlchemy(app)
 DB_HOST = "localhost"
 DB_NAME = "coba"
 DB_USER = "postgres"
-DB_PASS = "postgres"
+DB_PASS = "Indonesia09"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -85,7 +85,7 @@ class Jawaban(db.Model):
     id_user = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Foreign key to users table
     id_soal = db.Column(db.Integer, db.ForeignKey('soal.id_soal'), nullable=False)  # Foreign key to soal table
     jawaban = db.Column(db.Text, nullable=False)  # Answer provided by the user
-    # waktu_submit = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    waktu_submit = db.Column(db.DateTime, default=datetime.now, nullable=False)
     nilai = db.Column(db.String(1), nullable=True)
 
     # Relationships
@@ -515,11 +515,11 @@ def siswa_quiz_detail(class_id, quiz_id):
 
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
     
-    # Get previous answers and submission time if they exist
+    # Get previous answers and submission time ONLY for the current user
     previous_answers = {}
     last_submission = None
     submitted_answers = Jawaban.query.join(Soal).filter(
-        Jawaban.id_user == user_id,
+        Jawaban.id_user == user_id,  # Filter specifically for current user
         Soal.id_kuis == quiz_id
     ).all()
     
@@ -527,19 +527,26 @@ def siswa_quiz_detail(class_id, quiz_id):
     
     if has_submitted:
         for jawaban in submitted_answers:
-            previous_answers[jawaban.id_soal] = jawaban.jawaban
-            if last_submission is None or jawaban.waktu_submit > last_submission:
-                last_submission = jawaban.waktu_submit
+            # Ensure this answer belongs to the current user
+            if jawaban.id_user == user_id:
+                previous_answers[jawaban.id_soal] = jawaban.jawaban
+                if last_submission is None or jawaban.waktu_submit > last_submission:
+                    last_submission = jawaban.waktu_submit
 
     if request.method == 'POST':
         try:
             current_time = datetime.now()
             
+            # Validate deadline if it exists
+            if selected_quiz.batas_waktu and current_time > selected_quiz.batas_waktu:
+                flash('Maaf, batas waktu pengumpulan kuis telah berakhir', 'danger')
+                return redirect(url_for('siswa_class_quizzes', class_id=class_id))
+            
             # Process student's answers
             for soal in soal_list:
                 jawaban_text = request.form.get(f'jawaban_{soal.id_soal}')
                 if jawaban_text:
-                    # Check if answer already exists
+                    # Check if answer already exists for this user
                     existing_jawaban = Jawaban.query.filter_by(
                         id_user=user_id,
                         id_soal=soal.id_soal
@@ -586,6 +593,37 @@ def siswa_quiz_detail(class_id, quiz_id):
         last_submission_time=formatted_last_submission
     )
 
+@app.route('/siswa/class/<int:class_id>/quizzes/<int:quiz_id>/score')
+def score_quiz(class_id, quiz_id):
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    selected_class = kelas_ajar.query.get(class_id)
+    selected_quiz = Kuis.query.get(quiz_id)
+
+    if not selected_class or not selected_quiz:
+        flash('Kelas atau kuis tidak ditemukan', 'danger')
+        return redirect(url_for('siswa_dashboard'))
+
+    # Ambil soal-soal dalam kuis
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+
+    # Ambil jawaban pengguna untuk setiap soal
+    jawaban_details = []
+    for soal in soal_list:
+        jawaban = Jawaban.query.filter_by(id_user=user_id, id_soal=soal.id_soal).first()
+        jawaban_details.append({
+            'soal': soal,
+            'jawaban_user': jawaban.jawaban if jawaban else 'Tidak dijawab',
+            'kunci_jawaban': soal.kunci_jawaban,
+            'nilai': jawaban.nilai if jawaban else 'Belum dinilai'
+        })
+
+    return render_template('siswa/score_quiz.html', 
+                           selected_class=selected_class, 
+                           selected_quiz=selected_quiz, 
+                           jawaban_details=jawaban_details)
 
 @app.route('/siswa/class/<int:class_id>/materi', methods=['GET'])
 def siswa_class_materi(class_id):

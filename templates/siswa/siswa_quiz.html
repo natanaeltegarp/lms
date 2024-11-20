@@ -40,7 +40,11 @@ Quis
                                 <p class="text-success">
                                     <i class="fas fa-check-circle"></i> Kuis telah dikerjakan
                                 </p>
-                                <p>Nilai Anda: <strong>{{ quiz_status[quiz.id_kuis]['score'] or 'N/A' }}</strong></p>
+                                <a href="{{ url_for('score_quiz', class_id=selected_class.id_kelas, quiz_id=quiz.id_kuis) }}"
+                                    class="btn btn-info">
+                                    Lihat Nilai
+                                </a>
+                                </a>
                                 {% elif quiz.batas_waktu %}
                                 <div id="countdown_{{ quiz.id_kuis }}" class="countdown-timer">
                                     Menghitung waktu...
