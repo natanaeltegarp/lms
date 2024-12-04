@@ -34,7 +34,6 @@
                             <th>No</th>
                             <th>Pertanyaan</th>
                             <th>Jawaban Anda</th>
-                            <th>Kunci Jawaban</th>
                             <th>Nilai</th>
                         </tr>
                     </thead>
@@ -44,7 +43,6 @@
                             <td>{{ loop.index }}</td>
                             <td>{{ detail.soal.pertanyaan }}</td>
                             <td>{{ detail.jawaban_user }}</td>
-                            <td>{{ detail.kunci_jawaban }}</td>
                             <td>
                                 {% if detail.nilai %}
                                 <span class="badge 
