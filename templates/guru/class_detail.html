@@ -1,7 +1,7 @@
 {% extends 'guru/dashboard_kelas.html' %}
 
 {% block title %}
-Dashboard
+{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}
 {% endblock %}
 
 {% block content %}
@@ -27,34 +27,45 @@ Dashboard
         <div class="row">
             <!-- Card untuk Kuis -->
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Kuis</h3>
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title"><i class="fas fa-question-circle"></i> Kuis</h3>
                     </div>
                     <div class="card-body">
                         <p>Kelola semua kuis untuk kelas ini.</p>
-                        <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}" class="btn btn-primary">Lihat Kuis</a>
+                        <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-right"></i> Lihat Kuis
+                        </a>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Card untuk Daftar Peserta -->
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Daftar Peserta</h3>
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="card-title"><i class="fas fa-users"></i> Daftar Peserta</h3>
                     </div>
                     <div class="card-body">
                         <p>Lihat dan kelola daftar peserta yang terdaftar di kelas ini.</p>
-                        <a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}" class="btn btn-primary">Lihat Daftar Peserta</a>
+                        <a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}" class="btn btn-success">
+                            <i class="fas fa-arrow-right"></i> Lihat Daftar Peserta
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="row mt-3">
-            <div class="col-md-12">
-                <a href="{{ url_for('guru_dashboard') }}" class="btn btn-secondary">Kembali ke Dashboard</a>
+        <div class="row mt-4">
+            <div class="col-md-12 text-center">
+                <form action="{{ url_for('delete_class', class_id=selected_class.id_kelas) }}" method="post" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kelas ini?');" class="d-inline">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Hapus Kelas
+                    </button>
+                </form>
+                <a href="{{ url_for('guru_dashboard') }}" class="btn btn-secondary ml-2">
+                    <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
+                </a>
             </div>
         </div>
     </div>

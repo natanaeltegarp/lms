@@ -10,16 +10,16 @@ import re
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
-DB_NAME = "coba"
+DB_NAME = "lms"
 DB_USER = "postgres"
-DB_PASS = "Indonesia09"
+DB_PASS = "postgres"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -325,13 +325,37 @@ def class_detail(class_id):
         return render_template('guru/class_detail.html', selected_class=selected_class)
     else:
         return "Kelas tidak ditemukan", 404
+    
+@app.route('/guru/class/<int:class_id>/delete', methods=['POST'])
+def delete_class(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    user_id = session['id']
+    kelas_list = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
+
+    try:
+        kuis_ids = [kuis.id_kuis for kuis in Kuis.query.filter_by(id_kelas=class_id).all()]
+        Jawaban.query.filter(Jawaban.id_soal.in_(
+            db.session.query(Soal.id_soal).filter(Soal.id_kuis.in_(kuis_ids))
+        )).delete()
+        Soal.query.filter(Soal.id_kuis.in_(kuis_ids)).delete()
+        Kuis.query.filter_by(id_kelas=class_id).delete()
+
+        enrollment.query.filter_by(id_kelas=class_id).delete()
+
+        db.session.delete(selected_class)
+        db.session.commit()
+        flash("Kelas berhasil dihapus.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Terjadi kesalahan saat menghapus kelas: {str(e)}", "danger")
+
+    return redirect(url_for('guru_dashboard', classes=kelas_list))
 
 @app.route('/guru/class/<int:class_id>/quizzes')
 def class_quizzes(class_id):
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
     selected_class = kelas_ajar.query.get(class_id)
     return render_template('guru/class_quizzes.html', quizzes=quizzes, selected_class=selected_class)
-
 
 @app.route('/guru/class/<int:class_id>/add_quiz', methods=['GET', 'POST'])
 def add_quiz(class_id):
@@ -357,6 +381,26 @@ def quiz_detail(class_id, quiz_id):
     if not selected_quiz:
         return "Kuis tidak ditemukan", 404
     return render_template('guru/quiz_detail.html', selected_class=selected_class, selected_quiz=selected_quiz)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_quiz', methods=['POST'])
+def delete_quiz(class_id, quiz_id):
+    selected_class = kelas_ajar.query.get(class_id)
+    quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
+    selected_quiz = Kuis.query.get_or_404(quiz_id)
+
+    try:
+        Jawaban.query.filter(Jawaban.id_soal.in_(
+            db.session.query(Soal.id_soal).filter_by(id_kuis=quiz_id)
+        )).delete()
+        Soal.query.filter_by(id_kuis=quiz_id).delete()
+
+        db.session.delete(selected_quiz)
+        db.session.commit()
+        flash("Kuis berhasil dihapus.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Terjadi kesalahan saat menghapus kuis: {str(e)}", "danger")
+    return redirect(url_for('class_quizzes', quizzes=quizzes, class_id=selected_class.id_kelas))
 
 @app.template_filter('display_batas_waktu')
 def display_batas_waktu(batas_waktu):
@@ -441,7 +485,6 @@ def siswa_dashboard():
     # Ambil daftar kelas yang diambil oleh pengguna
     enrolled_classes = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('siswa/dashboard.html',classes=enrolled_classes)
-
 
 @app.route('/siswa/class/<int:class_id>/quizzes')
 def siswa_class_quizzes(class_id):
