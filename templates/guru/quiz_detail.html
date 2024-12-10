@@ -1,7 +1,7 @@
 {% extends 'guru/dashboard_kelas.html' %}
 
 {% block title %} 
-Dashboard 
+{{ selected_class.kelas }} - {{ selected_class.nama_mapel }} 
 {% endblock %} 
 
 {% block content %}
@@ -17,7 +17,7 @@ Dashboard
                     <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
                     <li class="breadcrumb-item"><a href="{{ url_for('class_quizzes', class_id=selected_quiz.id_kelas) }}">Daftar Kuis</a></li>
-                    <li class="breadcrumb-item active">{{ selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }} - {{ selected_class.kelas }}</li>
+                    <li class="breadcrumb-item active">{{ selected_quiz.judul_kuis }}</li>
                 </ol>
             </div>
         </div>
@@ -26,23 +26,34 @@ Dashboard
 
 <div class="content">
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card">
-                    <div class="card-header">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
                         <h3 class="card-title">{{ selected_quiz.judul_kuis }}</h3>
                     </div>
                     <div class="card-body">
                         <p><strong>Batas Waktu:</strong> {{ selected_quiz.batas_waktu|display_batas_waktu }}</p>
-                        <div class="btn-group" role="group">
-                            <a href="{{ url_for('quiz_edit', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-primary">Edit Soal</a>
-                            <a href="{{ url_for('quiz_answer', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-info">Lihat Jawaban Siswa</a>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('quiz_edit', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Edit Soal
+                            </a>
+                            <a href="{{ url_for('quiz_answer', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-info">
+                                <i class="fas fa-eye"></i> Lihat Jawaban Siswa
+                            </a>
+                            <form action="{{ url_for('delete_quiz', class_id=selected_class.id_kelas, quiz_id=selected_quiz.id_kuis) }}" method="post" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kuis ini?');" class="d-inline">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Hapus Kuis
+                                </button>
+                            </form>
                         </div>
 
                         <hr>
 
-                        <!-- Tombol kembali ke daftar kuis -->
-                        <a href="{{ url_for('class_quizzes', class_id=selected_quiz.id_kelas) }}" class="btn btn-secondary mt-2">Kembali ke Daftar Kuis</a>
+                        <a href="{{ url_for('class_quizzes', class_id=selected_quiz.id_kelas) }}" class="btn btn-secondary mt-2">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Daftar Kuis
+                        </a>
                     </div>
                 </div>
             </div>
