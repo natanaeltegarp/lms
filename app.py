@@ -94,6 +94,15 @@ class Jawaban(db.Model):
 
     def __repr__(self):
         return f'<Jawaban {self.id_jawaban}>'
+    
+class Pengumuman(db.Model):
+    __tablename__ = 'pengumuman'
+
+    id_pengumuman = db.Column(db.Integer, primary_key=True)
+    id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
+    judul = db.Column(db.String(255), nullable=False)
+    konten = db.Column(db.Text, nullable=False)
+    tanggal_dibuat = db.Column(db.DateTime, default=db.func.now(), nullable=False)
 
 @app.template_filter('display_batas_waktu')
 def display_batas_waktu(value):
@@ -350,6 +359,38 @@ def delete_class(class_id):
         flash(f"Terjadi kesalahan saat menghapus kelas: {str(e)}", "danger")
 
     return redirect(url_for('guru_dashboard', classes=kelas_list))
+
+@app.route('/guru/class/<int:class_id>/announcements', methods=['GET'])
+def class_announcements(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    pengumuman_list = Pengumuman.query.filter_by(id_kelas=class_id).order_by(Pengumuman.tanggal_dibuat.desc()).all()
+    return render_template('guru/class_announcements.html', selected_class=selected_class, pengumuman_list=pengumuman_list)
+
+@app.route('/guru/class/<int:class_id>/announcements/add', methods=['GET', 'POST'])
+def add_announcement(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    if request.method == 'POST':
+        judul = request.form['judul']
+        konten = request.form['konten']
+
+        if not judul or not konten:
+            flash("Judul dan konten tidak boleh kosong", "danger")
+            return redirect(url_for('add_announcement', class_id=class_id))
+        
+        pengumuman = Pengumuman(id_kelas=class_id, judul=judul, konten=konten)
+        db.session.add(pengumuman)
+        db.session.commit()
+        flash("Pengumuman berhasil dibuat", "success")
+        return redirect(url_for('class_announcements', class_id=class_id))
+    return render_template('guru/add_announcement.html', selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/announcements/<int:announcement_id>/delete', methods=['POST'])
+def delete_announcement(class_id,announcement_id):
+    pengumuman = Pengumuman.query.get_or_404(announcement_id)
+    db.session.delete(pengumuman)
+    db.session.commit()
+    flash("Pengumuman berhasil dihapus", "success")
+    return redirect(url_for('class_announcements', class_id=class_id))
 
 @app.route('/guru/class/<int:class_id>/quizzes')
 def class_quizzes(class_id):

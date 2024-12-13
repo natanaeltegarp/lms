@@ -1,0 +1,73 @@
+{% extends 'guru/dashboard_kelas.html' %}
+
+{% block title %}
+{{ selected_class.kelas }} - {{ selected_class.nama_mapel }} 
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
+                    <li class="breadcrumb-item active">Pengumuman</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title">Daftar Pengumuman</h3>
+                        <div class="card-tools">
+                            <a href="{{ url_for('add_announcement', class_id=selected_class.id_kelas) }}" class="btn btn-light btn-sm">
+                                <i class="fas fa-plus"></i> Tambah Pengumuman
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if pengumuman_list|length > 0 %}
+                            <ul class="list-group">
+                                {% for pengumuman in pengumuman_list %}
+                                    <li class="list-group-item">
+                                        <div class="d-flex justify-content-between">
+                                            <div>
+                                                <strong>{{ pengumuman.judul }}</strong>
+                                                <p class="text-muted mb-0">{{ pengumuman.tanggal_dibuat.strftime('%d-%m-%Y %H:%M') }}</p>
+                                            </div>
+                                            <form action="{{ url_for('delete_announcement', class_id=selected_class.id_kelas, announcement_id=pengumuman.id_pengumuman) }}" method="post" onsubmit="return confirm('Hapus pengumuman ini?');">
+                                                <button type="submit" class="btn btn-danger btn-sm">
+                                                    <i class="fas fa-trash"></i> Hapus
+                                                </button>
+                                            </form>
+                                        </div>
+                                        <p class="mt-2">{{ pengumuman.konten }}</p>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-center text-muted">Tidak ada pengumuman.</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Kembali ke Kelas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
