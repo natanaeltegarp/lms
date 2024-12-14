@@ -1,12 +1,14 @@
 from flask import Flask, request, session, redirect, url_for, render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import psycopg2 
 import psycopg2.extras
 import secrets
 import random
 import re
+import os
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
@@ -64,7 +66,6 @@ class Materi(db.Model):
     id_materi = db.Column(db.Integer, primary_key=True)
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     nama_materi = db.Column(db.String(255), nullable=False)
-    nama_guru = db.Column(db.String(255), nullable=False)
     file_materi = db.Column(db.String(255), nullable=False)  # Nama file untuk materi
 
     kelas = db.relationship('kelas_ajar', backref='materi', lazy=True)
@@ -103,6 +104,9 @@ class Pengumuman(db.Model):
     judul = db.Column(db.String(255), nullable=False)
     konten = db.Column(db.Text, nullable=False)
     tanggal_dibuat = db.Column(db.DateTime, default=db.func.now(), nullable=False)
+
+UPLOAD_FOLDER = 'static/uploads/materials'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.template_filter('display_batas_waktu')
 def display_batas_waktu(value):
@@ -391,6 +395,47 @@ def delete_announcement(class_id,announcement_id):
     db.session.commit()
     flash("Pengumuman berhasil dihapus", "success")
     return redirect(url_for('class_announcements', class_id=class_id))
+
+@app.route('/guru/class/<int:class_id>/materials', methods=['GET'])
+def class_materials(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    materi_list = Materi.query.filter_by(id_kelas=class_id).all()
+    return render_template('guru/class_materials.html', selected_class=selected_class, materi_list=materi_list)                                                    
+
+@app.route('/guru/class/<int:class_id>/materials/add', methods=['GET', 'POST'])
+def add_material(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    if request.method == 'POST':
+        nama_materi = request.form['nama_materi']
+        file_materi = request.files['file_materi']
+        if not nama_materi or not file_materi:
+            flash("Nama materi dan file materi tidak boleh kosong", "danger")
+            return redirect(url_for('add_material', class_id=class_id))
+        
+        materi = Materi(id_kelas=class_id, nama_materi=nama_materi, file_materi="")
+        db.session.add(materi)
+        db.session.commit()
+        
+        filename = f"{materi.id_materi}_{materi.id_kelas}{os.path.splitext(file_materi.filename)[-1]}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file_materi.save(file_path)
+        materi.file_materi = file_path
+        db.session.commit()
+        
+        flash("Materi berhasil dibuat", "success")
+        return redirect(url_for('class_materials', class_id=class_id))
+    return render_template('guru/add_material.html', selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/materials/<int:material_id>/delete', methods=['POST'])
+def delete_material(class_id, material_id):
+    materi = Materi.query.get_or_404(material_id)
+    if materi.file_materi and os.path.exists(materi.file_materi):
+        os.remove(materi.file_materi)
+    
+    db.session.delete(materi)
+    db.session.commit()
+    flash("Materi berhasil dihapus", "success")
+    return redirect(url_for('class_materials', class_id=class_id))
 
 @app.route('/guru/class/<int:class_id>/quizzes')
 def class_quizzes(class_id):

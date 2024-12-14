@@ -1,7 +1,7 @@
-{% extends 'guru/guru_dashboard.html' %}
+{% extends 'guru/dashboard_kelas.html' %}
 
 {% block title %}
-Dashboard
+Tambah Materi
 {% endblock %}
 
 {% block content %}
@@ -9,12 +9,15 @@ Dashboard
     <div class="container-fluid">
         <div class="row mb-2">
             <div class="col-sm-6">
-                <h1 class="m-0">Dashboard</h1>
+                <h1 class="m-0">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h1>
             </div>
             <div class="col-sm-6">
                 <ol class="breadcrumb float-sm-right">
                     <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item active">Dashboard</li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('class_materials', class_id=selected_class.id_kelas) }}">Materi</a></li>
+                    <li class="breadcrumb-item active">Tambah Materi</li>
                 </ol>
             </div>
         </div>
@@ -23,20 +26,27 @@ Dashboard
 
 <div class="content">
     <div class="container-fluid">
-        <div class="row">
-            <!-- Enrolled Classes -->
-            <div class="col-md-6">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
                 <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Tambah Materi Kelas: {{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</h3>
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title">Tambah Materi Baru</h3>
                     </div>
                     <div class="card-body">
-                        <form action="{{ url_for('add_material', class_id=selected_class.id) }}" method="post">
-                            <input type="text" name="material_name" placeholder="Nama Materi" required>
-                            <button type="submit" class="btn btn-primary">Tambah Materi</button>
+                        <form action="" method="post" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="nama_materi">Nama Materi</label>
+                                <input type="text" name="nama_materi" id="nama_materi" class="form-control" placeholder="Masukkan nama materi" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="file">File Materi</label>
+                                <input type="file" name="file" id="file" class="form-control-file" required>
+                            </div>
+                            <div class="form-group text-right">
+                                <button type="submit" class="btn btn-success">Simpan</button>
+                                <a href="{{ url_for('class_materials', class_id=selected_class.id_kelas) }}" class="btn btn-secondary">Batal</a>
+                            </div>
                         </form>
-                        <br>
-                        <a href="{{ url_for('class_materials', class_id=selected_class.id) }}">Kembali ke Daftar Materi</a>
                     </div>
                 </div>
             </div>
