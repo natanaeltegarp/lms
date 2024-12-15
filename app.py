@@ -306,6 +306,64 @@ def guru_dashboard():
     kelas_list = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('guru/dashboard.html', classes=kelas_list)
 
+@app.route('/guru/profile', methods=['GET', 'POST'])
+def guru_profile():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    user = User.query.get(user_id)
+
+    if request.method == 'POST':
+        if 'update_info' in request.form:
+            # Update fullname and email
+            new_fullname = request.form.get('fullname')
+            new_email = request.form.get('email')
+            
+            updates = []
+
+            if new_fullname and new_fullname != user.fullname:
+                user.fullname = new_fullname
+                updates.append('full name')
+
+            if new_email and new_email != user.email:
+                if User.query.filter_by(email=new_email).first():
+                    flash('Email already in use.', 'danger')
+                else:
+                    user.email = new_email
+                    updates.append('email')
+
+            if updates:
+                if len(updates) == 1:
+                    flash(f'Your {updates[0]} has been updated successfully.', 'success')
+                else:
+                    flash('Your personal information has been updated successfully.', 'success')
+            else:
+                flash('No changes were made to your personal information.', 'info')
+
+        elif 'change_password' in request.form:
+            # Update password
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+            if current_password and new_password and confirm_password:
+                if check_password_hash(user.password, current_password):
+                    if new_password == confirm_password:
+                        user.password = generate_password_hash(new_password)
+                        flash('Password updated successfully.', 'success')
+                    else:
+                        flash('New passwords do not match.', 'danger')
+                else:
+                    flash('Current password is incorrect.', 'danger')
+            else:
+                flash('All password fields are required.', 'danger')
+
+        db.session.commit()
+        return redirect(url_for('guru_profile'))
+
+    return render_template('guru/profile.html', user=user)
+
 @app.route('/guru/add_class', methods=['GET', 'POST'])
 def add_class():
     if request.method == 'POST':
@@ -448,7 +506,7 @@ def add_quiz(class_id):
     if 'id' not in session:
         return redirect(url_for('login'))
     
-    selected_class = kelas_ajar.query.get(class_id)
+    selected_class = kelas_ajar.query.get_or_404(class_id)
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
         batas_waktu = request.form['batas_waktu']
@@ -456,7 +514,9 @@ def add_quiz(class_id):
         new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis, batas_waktu=batas_waktu)
         db.session.add(new_quiz)
         db.session.commit()
-        return redirect(url_for('class_quizzes', class_id=class_id))
+        flash("Kuis berhasil ditambahkan.", "success")
+
+        return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=new_quiz.id_kuis))
     return render_template('guru/add_quiz.html', selected_class=selected_class)
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET'])
@@ -499,7 +559,6 @@ def quiz_answer(class_id, quiz_id):
     selected_class = kelas_ajar.query.get(class_id)
     selected_quiz = Kuis.query.get(quiz_id)
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
-    # jawaban_list = Jawaban.query.filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
 
@@ -536,8 +595,15 @@ def quiz_edit(class_id, quiz_id):
         db.session.commit()
 
         return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=quiz_id))
-
     return render_template('guru/quiz_edit.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/view', methods=['GET'])
+def quiz_view(class_id, quiz_id):
+    selected_class = kelas_ajar.query.get(class_id)
+    selected_quiz = Kuis.query.get(quiz_id)
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+    return render_template('guru/quiz_view.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
+
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):

@@ -24,7 +24,7 @@ Dashboard
                             href="{{ url_for('quiz_detail', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}">{{
                             selected_quiz.judul_kuis }} - {{ selected_class.nama_mapel }} - {{ selected_class.kelas
                             }}</a></li>
-                    <li class="breadcrumb-item active">Edit Soal</li>
+                    <li class="breadcrumb-item active">Lihat Soal dan Kunci</li>
                 </ol>
             </div>
         </div>
@@ -47,7 +47,6 @@ Dashboard
                                 <tr>
                                     <th>Soal</th>
                                     <th>Kunci Jawaban</th>
-                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -55,15 +54,6 @@ Dashboard
                                 <tr>
                                     <td>{{ soal.pertanyaan }}</td>
                                     <td>{{ soal.kunci_jawaban }}</td>
-                                    <td>
-                                        <form
-                                            action="{{ url_for('delete_question', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis, question_id=soal.id_soal) }}"
-                                            method="POST" style="display:inline;">
-                                            <button type="submit"
-                                                onclick="return confirm('Apakah Anda yakin ingin menghapus soal ini?')"
-                                                class="btn btn-danger">Hapus</button>
-                                        </form>
-                                    </td>
                                 </tr>
                                 {% else %}
                                 <tr>
@@ -74,27 +64,8 @@ Dashboard
                         </table>
                     </div>
                 </div>
-
-                <!-- Form Tambah Soal Baru -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Tambah Soal Baru</h3>
-                    </div>
-                    <div class="card-body">
-                        <form action="" method="POST">
-                            <label for="pertanyaan">Soal:</label><br>
-                            <textarea id="pertanyaan" name="pertanyaan" rows="4" cols="50" required></textarea><br><br>
-
-                            <label for="kunci_jawaban">Kunci Jawaban:</label><br>
-                            <textarea type="text" id="kunci_jawaban" name="kunci_jawaban" rows="4" cols="50"
-                                required></textarea><br><br>
-
-                            <input type="submit" value="Tambah Soal" class="btn btn-primary">
-                        </form>
-
-                        <hr>
                         <a
-                            href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=selected_quiz.id_kuis) }}" onclick="return confirm('Soal tidak dapat diubah setelah meninggalkan halaman ini! Apakah anda yakin untuk kembali?')" class="btn btn-secondary mt-2"><i class="fas fa-arrow-left"></i>Kembali
+                            href="{{ url_for('quiz_detail', class_id=selected_class.id_kelas, quiz_id=selected_quiz.id_kuis) }}">Kembali
                             ke Detail Kuis</a>
                     </div>
                 </div>
