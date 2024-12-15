@@ -36,8 +36,8 @@
                         <p><strong>Batas Waktu:</strong> {{ selected_quiz.batas_waktu|display_batas_waktu }}</p>
                         
                         <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('quiz_edit', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-primary">
-                                <i class="fas fa-edit"></i> Edit Soal
+                            <a href="{{ url_for('quiz_view', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Lihat Soal dan Kunci
                             </a>
                             <a href="{{ url_for('quiz_answer', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-info">
                                 <i class="fas fa-eye"></i> Lihat Jawaban Siswa

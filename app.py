@@ -448,7 +448,7 @@ def add_quiz(class_id):
     if 'id' not in session:
         return redirect(url_for('login'))
     
-    selected_class = kelas_ajar.query.get(class_id)
+    selected_class = kelas_ajar.query.get_or_404(class_id)
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
         batas_waktu = request.form['batas_waktu']
@@ -456,7 +456,9 @@ def add_quiz(class_id):
         new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis, batas_waktu=batas_waktu)
         db.session.add(new_quiz)
         db.session.commit()
-        return redirect(url_for('class_quizzes', class_id=class_id))
+        flash("Kuis berhasil ditambahkan.", "success")
+
+        return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=new_quiz.id_kuis))
     return render_template('guru/add_quiz.html', selected_class=selected_class)
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET'])
@@ -499,7 +501,6 @@ def quiz_answer(class_id, quiz_id):
     selected_class = kelas_ajar.query.get(class_id)
     selected_quiz = Kuis.query.get(quiz_id)
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
-    # jawaban_list = Jawaban.query.filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
 
@@ -536,8 +537,15 @@ def quiz_edit(class_id, quiz_id):
         db.session.commit()
 
         return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=quiz_id))
-
     return render_template('guru/quiz_edit.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/view', methods=['GET'])
+def quiz_view(class_id, quiz_id):
+    selected_class = kelas_ajar.query.get(class_id)
+    selected_quiz = Kuis.query.get(quiz_id)
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+    return render_template('guru/quiz_view.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
+
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):
