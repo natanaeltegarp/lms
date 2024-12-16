@@ -1,12 +1,14 @@
 from flask import Flask, request, session, redirect, url_for, render_template, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime
 import psycopg2 
 import psycopg2.extras
 import secrets
 import random
 import re
+import os
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
@@ -64,7 +66,6 @@ class Materi(db.Model):
     id_materi = db.Column(db.Integer, primary_key=True)
     id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
     nama_materi = db.Column(db.String(255), nullable=False)
-    nama_guru = db.Column(db.String(255), nullable=False)
     file_materi = db.Column(db.String(255), nullable=False)  # Nama file untuk materi
 
     kelas = db.relationship('kelas_ajar', backref='materi', lazy=True)
@@ -94,6 +95,18 @@ class Jawaban(db.Model):
 
     def __repr__(self):
         return f'<Jawaban {self.id_jawaban}>'
+    
+class Pengumuman(db.Model):
+    __tablename__ = 'pengumuman'
+
+    id_pengumuman = db.Column(db.Integer, primary_key=True)
+    id_kelas = db.Column(db.Integer, db.ForeignKey('kelas_ajar.id_kelas'), nullable=False)
+    judul = db.Column(db.String(255), nullable=False)
+    konten = db.Column(db.Text, nullable=False)
+    tanggal_dibuat = db.Column(db.DateTime, default=db.func.now(), nullable=False)
+
+UPLOAD_FOLDER = 'static/uploads/materials'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.template_filter('display_batas_waktu')
 def display_batas_waktu(value):
@@ -293,6 +306,64 @@ def guru_dashboard():
     kelas_list = kelas_ajar.query.join(enrollment).filter(enrollment.id_user == user_id).all()
     return render_template('guru/dashboard.html', classes=kelas_list)
 
+@app.route('/guru/profile', methods=['GET', 'POST'])
+def guru_profile():
+    if 'id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['id']
+    user = User.query.get(user_id)
+
+    if request.method == 'POST':
+        if 'update_info' in request.form:
+            # Update fullname and email
+            new_fullname = request.form.get('fullname')
+            new_email = request.form.get('email')
+            
+            updates = []
+
+            if new_fullname and new_fullname != user.fullname:
+                user.fullname = new_fullname
+                updates.append('full name')
+
+            if new_email and new_email != user.email:
+                if User.query.filter_by(email=new_email).first():
+                    flash('Email already in use.', 'danger')
+                else:
+                    user.email = new_email
+                    updates.append('email')
+
+            if updates:
+                if len(updates) == 1:
+                    flash(f'Your {updates[0]} has been updated successfully.', 'success')
+                else:
+                    flash('Your personal information has been updated successfully.', 'success')
+            else:
+                flash('No changes were made to your personal information.', 'info')
+
+        elif 'change_password' in request.form:
+            # Update password
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+            if current_password and new_password and confirm_password:
+                if check_password_hash(user.password, current_password):
+                    if new_password == confirm_password:
+                        user.password = generate_password_hash(new_password)
+                        flash('Password updated successfully.', 'success')
+                    else:
+                        flash('New passwords do not match.', 'danger')
+                else:
+                    flash('Current password is incorrect.', 'danger')
+            else:
+                flash('All password fields are required.', 'danger')
+
+        db.session.commit()
+        return redirect(url_for('guru_profile'))
+
+    return render_template('guru/profile.html', user=user)
+
 @app.route('/guru/add_class', methods=['GET', 'POST'])
 def add_class():
     if request.method == 'POST':
@@ -351,6 +422,79 @@ def delete_class(class_id):
 
     return redirect(url_for('guru_dashboard', classes=kelas_list))
 
+@app.route('/guru/class/<int:class_id>/announcements', methods=['GET'])
+def class_announcements(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    pengumuman_list = Pengumuman.query.filter_by(id_kelas=class_id).order_by(Pengumuman.tanggal_dibuat.desc()).all()
+    return render_template('guru/class_announcements.html', selected_class=selected_class, pengumuman_list=pengumuman_list)
+
+@app.route('/guru/class/<int:class_id>/announcements/add', methods=['GET', 'POST'])
+def add_announcement(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    if request.method == 'POST':
+        judul = request.form['judul']
+        konten = request.form['konten']
+
+        if not judul or not konten:
+            flash("Judul dan konten tidak boleh kosong", "danger")
+            return redirect(url_for('add_announcement', class_id=class_id))
+        
+        pengumuman = Pengumuman(id_kelas=class_id, judul=judul, konten=konten)
+        db.session.add(pengumuman)
+        db.session.commit()
+        flash("Pengumuman berhasil dibuat", "success")
+        return redirect(url_for('class_announcements', class_id=class_id))
+    return render_template('guru/add_announcement.html', selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/announcements/<int:announcement_id>/delete', methods=['POST'])
+def delete_announcement(class_id,announcement_id):
+    pengumuman = Pengumuman.query.get_or_404(announcement_id)
+    db.session.delete(pengumuman)
+    db.session.commit()
+    flash("Pengumuman berhasil dihapus", "success")
+    return redirect(url_for('class_announcements', class_id=class_id))
+
+@app.route('/guru/class/<int:class_id>/materials', methods=['GET'])
+def class_materials(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    materi_list = Materi.query.filter_by(id_kelas=class_id).all()
+    return render_template('guru/class_materials.html', selected_class=selected_class, materi_list=materi_list)                                                    
+
+@app.route('/guru/class/<int:class_id>/materials/add', methods=['GET', 'POST'])
+def add_material(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    if request.method == 'POST':
+        nama_materi = request.form['nama_materi']
+        file_materi = request.files['file_materi']
+        if not nama_materi or not file_materi:
+            flash("Nama materi dan file materi tidak boleh kosong", "danger")
+            return redirect(url_for('add_material', class_id=class_id))
+        
+        materi = Materi(id_kelas=class_id, nama_materi=nama_materi, file_materi="")
+        db.session.add(materi)
+        db.session.commit()
+        
+        filename = f"{materi.id_materi}_{materi.id_kelas}{os.path.splitext(file_materi.filename)[-1]}"
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file_materi.save(file_path)
+        materi.file_materi = file_path
+        db.session.commit()
+        
+        flash("Materi berhasil dibuat", "success")
+        return redirect(url_for('class_materials', class_id=class_id))
+    return render_template('guru/add_material.html', selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/materials/<int:material_id>/delete', methods=['POST'])
+def delete_material(class_id, material_id):
+    materi = Materi.query.get_or_404(material_id)
+    if materi.file_materi and os.path.exists(materi.file_materi):
+        os.remove(materi.file_materi)
+    
+    db.session.delete(materi)
+    db.session.commit()
+    flash("Materi berhasil dihapus", "success")
+    return redirect(url_for('class_materials', class_id=class_id))
+
 @app.route('/guru/class/<int:class_id>/quizzes')
 def class_quizzes(class_id):
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
@@ -362,7 +506,7 @@ def add_quiz(class_id):
     if 'id' not in session:
         return redirect(url_for('login'))
     
-    selected_class = kelas_ajar.query.get(class_id)
+    selected_class = kelas_ajar.query.get_or_404(class_id)
     if request.method == 'POST':
         judul_kuis = request.form['judul_kuis']
         batas_waktu = request.form['batas_waktu']
@@ -370,7 +514,9 @@ def add_quiz(class_id):
         new_quiz = Kuis(id_kelas=class_id, judul_kuis=judul_kuis, batas_waktu=batas_waktu)
         db.session.add(new_quiz)
         db.session.commit()
-        return redirect(url_for('class_quizzes', class_id=class_id))
+        flash("Kuis berhasil ditambahkan.", "success")
+
+        return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=new_quiz.id_kuis))
     return render_template('guru/add_quiz.html', selected_class=selected_class)
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>', methods=['GET'])
@@ -413,7 +559,6 @@ def quiz_answer(class_id, quiz_id):
     selected_class = kelas_ajar.query.get(class_id)
     selected_quiz = Kuis.query.get(quiz_id)
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
-    # jawaban_list = Jawaban.query.filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
     return render_template('guru/quiz_answer.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list, jawaban_list=jawaban_list)
 
@@ -450,8 +595,15 @@ def quiz_edit(class_id, quiz_id):
         db.session.commit()
 
         return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=quiz_id))
-
     return render_template('guru/quiz_edit.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
+
+@app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/view', methods=['GET'])
+def quiz_view(class_id, quiz_id):
+    selected_class = kelas_ajar.query.get(class_id)
+    selected_quiz = Kuis.query.get(quiz_id)
+    soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
+    return render_template('guru/quiz_view.html', selected_class=selected_class, selected_quiz=selected_quiz, soal_list=soal_list)
+
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/delete_question/<int:question_id>', methods=['POST'])
 def delete_question(class_id, quiz_id, question_id):

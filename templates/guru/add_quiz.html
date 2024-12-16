@@ -1,54 +1,103 @@
-{% extends 'guru/dashboard_kelas.html' %}
-
-{% block title %}
-Tambah Kuis Baru
-{% endblock %}
-
-{% block content %}
+{% extends 'guru/dashboard_kelas.html' %} {% block title %} Tambah Kuis Baru {%
+endblock %} {% block content %}
 <div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-6">
-                <h1 class="m-0">Tambah Kuis Baru</h1>
-            </div>
-            <div class="col-sm-6">
-                <ol class="breadcrumb float-sm-right">
-                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}">Daftar Kuis</a></li>
-                    <li class="breadcrumb-item active">Tambah Kuis</li>
-                </ol>
-            </div>
-        </div>
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0">Tambah Kuis Baru</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('guru_dashboard') }}">Home</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('guru_dashboard') }}">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a
+              href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}"
+              >{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a
+            >
+          </li>
+          <li class="breadcrumb-item">
+            <a
+              href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}"
+              >Daftar Kuis</a
+            >
+          </li>
+          <li class="breadcrumb-item active">Tambah Kuis</li>
+        </ol>
+      </div>
     </div>
+  </div>
 </div>
 
 <div class="content">
-    <div class="container-fluid">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <h3 class="card-title">Form Tambah Kuis</h3>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}" method="post">
-                            <div class="form-group">
-                                <label for="judul_kuis">Judul Kuis:</label>
-                                <input type="text" id="judul_kuis" name="judul_kuis" class="form-control" placeholder="Masukkan judul kuis" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="batas_waktu">Batas Waktu:</label>
-                                <input type="datetime-local" id="batas_waktu" name="batas_waktu" class="form-control">
-                            </div>
-                            <button type="submit" class="btn btn-success mt-3">Tambah Kuis</button>
-                            <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}" class="btn btn-secondary mt-3">Kembali</a>
-                        </form>
-                    </div>
-                </div>
-            </div>
+  <div class="container-fluid">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card shadow">
+          <div class="card-header bg-primary text-white">
+            <h3 class="card-title">Form Tambah Kuis</h3>
+          </div>
+          <div class="card-body">
+            <form
+              action="{{ url_for('add_quiz', class_id=selected_class.id_kelas) }}"
+              method="post"
+            >
+              <div class="form-group">
+                <label for="judul_kuis">Judul Kuis:</label>
+                <input
+                  type="text"
+                  id="judul_kuis"
+                  name="judul_kuis"
+                  class="form-control"
+                  placeholder="Masukkan judul kuis"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="batas_waktu">Batas Waktu:</label>
+                <input
+                  type="datetime-local"
+                  id="batas_waktu"
+                  name="batas_waktu"
+                  class="form-control"
+                />
+              </div>
+              <button type="submit" class="btn btn-success mt-3">
+                Tambah Kuis
+              </button>
+              <a
+                href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}"
+                class="btn btn-secondary mt-3"
+                >Kembali</a
+              >
+            </form>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </div>
+<!-- <script>
+    const container = document.getElementById('soal-container');
+    const addSoalButton = document.getElementById('add-soal');
+
+    addSoalButton.addEventListener('click', () => {
+        const soalItem = document.createElement('div');
+        soalItem.className = 'soal-item';
+        soalItem.innerHTML = `
+            <label>Soal:</label>
+            <textarea name="soal" rows="3" required></textarea>
+            <label>Kunci Jawaban:</label>
+            <input type="text" name="kunci_jawaban" required>
+            <button type="button" class="remove-soal">Hapus</button>
+        `;
+        container.appendChild(soalItem);
+        soalItem.querySelector('.remove-soal').addEventListener('click', () => soalItem.remove());
+    });
+</script> -->
+
 {% endblock %}
