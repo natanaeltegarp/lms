@@ -12,14 +12,14 @@ import os
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/coba'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/lms2'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
-DB_NAME = "coba"
+DB_NAME = "lms2"
 DB_USER = "postgres"
 DB_PASS = "Indonesia09"
 
