@@ -1,0 +1,72 @@
+{% extends 'siswa/kelas_tempplate.html' %}
+
+{% block content %}
+<div class="content-header bg-primary text-white py-4">
+    <div class="container">
+        <div class="row justify-content-between">
+            <div class="col-auto">
+                <h1 class="h3">Pengumuman Kelas {{ selected_class.nama_mapel }} - {{ selected_class.kelas }}</h1>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<div class="content py-5">
+    <div class="container">
+        <div class="card shadow-sm border-light">
+            <div class="card-header bg-info text-white">
+                <h3 class="h5 mb-0">Daftar Pengumuman</h3>
+            </div>
+            <div class="card-body">
+                {% if no_pengumuman_message %}
+                <div class="alert alert-warning" role="alert">
+                    <strong>Perhatian!</strong> {{ no_pengumuman_message }}
+                </div>
+                {% else %}
+                <div class="list-group">
+                    {% for pengumuman in pengumuman_list %}
+                    <div class="list-group-item">
+                        <h5 class="mb-1">{{ pengumuman.judul }}</h5>
+                        <p class="mb-1">{{ pengumuman.konten[:200] }}...</p>
+                        <small class="text-muted">Dibuat pada: {{ pengumuman.tanggal_dibuat.strftime('%d %b %Y, %H:%M')
+                            }}</small>
+                        <div class="mt-2">
+                            <a href="#" class="btn btn-sm btn-primary" data-toggle="modal"
+                                data-target="#pengumumanModal{{ pengumuman.id_pengumuman }}">Lihat Detail</a>
+                        </div>
+                    </div>
+
+                    <!-- Modal untuk menampilkan konten pengumuman lengkap -->
+                    <div class="modal fade" id="pengumumanModal{{ pengumuman.id_pengumuman }}" tabindex="-1"
+                        role="dialog" aria-labelledby="pengumumanModalLabel{{ pengumuman.id_pengumuman }}"
+                        aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="pengumumanModalLabel{{ pengumuman.id_pengumuman }}">{{
+                                        pengumuman.judul }}</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>{{ pengumuman.konten }}</p>
+                                    <small class="text-muted">Dibuat pada: {{ pengumuman.tanggal_dibuat.strftime('%d %b
+                                        %Y, %H:%M') }}</small>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

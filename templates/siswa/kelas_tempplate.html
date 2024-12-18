@@ -64,7 +64,8 @@
 
                         <!-- Pengumuman -->
                         <li class="nav-item">
-                            <a href="#" class="nav-link">
+                            <a href="{{ url_for('siswa_class_pengumuman', class_id=selected_class.id_kelas) }}"
+                                class="nav-link">
                                 <i class="nav-icon fas fa-bullhorn"></i>
                                 <p>Pengumuman</p>
                             </a>
