@@ -9,10 +9,12 @@ import secrets
 import random
 import re
 import os
+import requests
+import csv
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/lms2'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -21,7 +23,7 @@ db = SQLAlchemy(app)
 DB_HOST = "localhost"
 DB_NAME = "lms2"
 DB_USER = "postgres"
-DB_PASS = "Indonesia09"
+DB_PASS = "postgres"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -566,14 +568,30 @@ def quiz_answer(class_id, quiz_id):
 def answer_grade(quiz_id, class_id):
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
     jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
-    grade = ['A', 'B', 'C', 'D', 'E']
     
-    for jawaban,user in jawaban_list:
-        jawaban_obj = Jawaban.query.get(jawaban.id_jawaban)
-        jawaban_obj.nilai = random.choice(grade)
-        db.session.add(jawaban_obj)
-    
-    db.session.commit()
+    csv_file = f'temp_answers_{quiz_id}.csv'
+    csv_filepath = os.path.join('static/uploads/temp', csv_file)
+    os.makedirs(os.path.dirname(csv_filepath), exist_ok=True)
+
+    try:
+        with open(csv_filepath, 'rb') as f:
+            #back-end belum dibuat; isi dengan
+            response = request.post('http://', files={'file':f})
+        if response.status_code == 200:
+            result = response.json()
+            for id_jawaban, nilai in result.items():
+                jawaban = Jawaban.query.get(id_jawaban)
+                jawaban.nilai = nilai
+            db.session.commit()
+            flash("Penilaian otomatis berhasil dilakukan", "success")
+        else:
+            flash("Penilaian otomatis gagal dilakukan", "danger")
+    except Exception as e:
+        flash(f"Terjadi kesalahan: {e}", "danger")
+    finally:
+        if os.path.exists(csv_filepath):
+            os.remove(csv_filepath)
+
     return redirect(url_for('quiz_answer', class_id=class_id, quiz_id=quiz_id))
 
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/edit', methods=['GET', 'POST'])
@@ -623,10 +641,28 @@ def delete_question(class_id, quiz_id, question_id):
 
 @app.route('/guru/class/<int:class_id>/enrollment')
 def class_enrollments(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
     enrollments = enrollment.query.filter_by(id_kelas=class_id).all()
-    peserta = [User.query.get(enrollment.id_user) for enrollment in enrollments]
-    selected_class = kelas_ajar.query.get(class_id)
+    peserta = [User.query.get(enrollment.id_user) for enrollment in enrollments if enrollment.id_user != session['id']]
     return render_template('guru/class_enrollments.html', peserta=peserta, selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/<int:user_id>/enrollment', methods=['POST'])
+def delete_enrollment(class_id, user_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    if selected_class.id_guru != session['id']:
+        flash("Anda tidak memiliki izin untuk menghapus peserta ini.", "danger")
+        return redirect(url_for('class_enrollments', class_id=class_id))
+    
+    enrollment = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
+    
+    if enrollment:
+        db.session.delete(enrollment)
+        db.session.commit()
+        flash('Peserta berhasil dihapus', 'success')
+    else:
+        flash('Peserta tidak ditemukan', 'danger')
+    
+    return redirect(url_for('class_enrollments', class_id=class_id))
 
 @app.route('/siswa/dashboard')
 def siswa_dashboard():

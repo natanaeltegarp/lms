@@ -81,23 +81,4 @@ endblock %} {% block content %}
     </div>
   </div>
 </div>
-<!-- <script>
-    const container = document.getElementById('soal-container');
-    const addSoalButton = document.getElementById('add-soal');
-
-    addSoalButton.addEventListener('click', () => {
-        const soalItem = document.createElement('div');
-        soalItem.className = 'soal-item';
-        soalItem.innerHTML = `
-            <label>Soal:</label>
-            <textarea name="soal" rows="3" required></textarea>
-            <label>Kunci Jawaban:</label>
-            <input type="text" name="kunci_jawaban" required>
-            <button type="button" class="remove-soal">Hapus</button>
-        `;
-        container.appendChild(soalItem);
-        soalItem.querySelector('.remove-soal').addEventListener('click', () => soalItem.remove());
-    });
-</script> -->
-
 {% endblock %}
