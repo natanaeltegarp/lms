@@ -623,10 +623,28 @@ def delete_question(class_id, quiz_id, question_id):
 
 @app.route('/guru/class/<int:class_id>/enrollment')
 def class_enrollments(class_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
     enrollments = enrollment.query.filter_by(id_kelas=class_id).all()
-    peserta = [User.query.get(enrollment.id_user) for enrollment in enrollments]
-    selected_class = kelas_ajar.query.get(class_id)
+    peserta = [User.query.get(enrollment.id_user) for enrollment in enrollments if enrollment.id_user != session['id']]
     return render_template('guru/class_enrollments.html', peserta=peserta, selected_class=selected_class)
+
+@app.route('/guru/class/<int:class_id>/<int:user_id>/enrollment', methods=['POST'])
+def delete_enrollment(class_id, user_id):
+    selected_class = kelas_ajar.query.get_or_404(class_id)
+    if selected_class.id_guru != session['id']:
+        flash("Anda tidak memiliki izin untuk menghapus peserta ini.", "danger")
+        return redirect(url_for('class_enrollments', class_id=class_id))
+    
+    enrollment = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
+    
+    if enrollment:
+        db.session.delete(enrollment)
+        db.session.commit()
+        flash('Peserta berhasil dihapus', 'success')
+    else:
+        flash('Peserta tidak ditemukan', 'danger')
+    
+    return redirect(url_for('class_enrollments', class_id=class_id))
 
 @app.route('/siswa/dashboard')
 def siswa_dashboard():

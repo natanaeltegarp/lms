@@ -33,7 +33,7 @@
                     </div>
                     <div class="card-body">
                         <p>Kelola semua kuis untuk kelas ini.</p>
-                        <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}" class="btn btn-primary">
+                        <a href="{{ url_for('class_quizzes', class_id=selected_class.id_kelas) }}" class="btn btn-info">
                             <i class="fas fa-arrow-right"></i> Lihat Kuis
                         </a>
                     </div>
@@ -43,13 +43,43 @@
             <!-- Card untuk Daftar Peserta -->
             <div class="col-md-6">
                 <div class="card shadow">
-                    <div class="card-header bg-success text-white">
+                    <div class="card-header bg-primary text-white">
                         <h3 class="card-title"><i class="fas fa-users"></i> Daftar Peserta</h3>
                     </div>
                     <div class="card-body">
                         <p>Lihat dan kelola daftar peserta yang terdaftar di kelas ini.</p>
-                        <a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}" class="btn btn-success">
+                        <a href="{{ url_for('class_enrollments', class_id=selected_class.id_kelas) }}" class="btn btn-info">
                             <i class="fas fa-arrow-right"></i> Lihat Daftar Peserta
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card untuk Materi -->
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title"><i class="fas fa-book"></i> Materi</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Lihat dan kelola materi di kelas ini.</p>
+                        <a href="{{ url_for('class_materials', class_id=selected_class.id_kelas) }}" class="btn btn-info">
+                            <i class="fas fa-arrow-right"></i> Lihat Materi
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card untuk Pengumuman -->
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="card-title"><i class="fas fa-bullhorn"></i> Pengumuman</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Lihat dan kelola pengumuman di kelas ini.</p>
+                        <a href="{{ url_for('class_announcements', class_id=selected_class.id_kelas) }}" class="btn btn-info">
+                            <i class="fas fa-arrow-right"></i> Lihat pengumuman
                         </a>
                     </div>
                 </div>
