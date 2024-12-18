@@ -12,16 +12,16 @@ import os
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/lms2'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
-DB_NAME = "lms"
+DB_NAME = "lms2"
 DB_USER = "postgres"
-DB_PASS = "postgres"
+DB_PASS = "Indonesia09"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -676,22 +676,46 @@ def siswa_class_quizzes(class_id):
     quizzes = Kuis.query.filter_by(id_kelas=class_id).all()
     
     quiz_status = {}
-    current_time = datetime.now()
+    current_time = datetime.now()  # Naive datetime, tanpa zona waktu
     for quiz in quizzes:
         has_taken = Jawaban.query.join(Soal).filter(
             Jawaban.id_user == user_id,
             Soal.id_kuis == quiz.id_kuis
         ).first() is not None
         
+        # Menghapus zona waktu dari batas_waktu jika dia offset-aware
+        if quiz.batas_waktu.tzinfo:
+            quiz.batas_waktu = quiz.batas_waktu.replace(tzinfo=None)  # Mengubah menjadi naive datetime
+
+        # Sekarang perbandingan antara dua naive datetime
+        is_deadline_passed = quiz.batas_waktu and current_time > quiz.batas_waktu
         quiz_status[quiz.id_kuis] = {
             'has_taken': has_taken,
-            'is_deadline_passed': quiz.batas_waktu and current_time > quiz.batas_waktu
+            'is_deadline_passed': is_deadline_passed
         }
 
     return render_template('siswa/siswa_quiz.html', 
                          quizzes=quizzes, 
                          selected_class=selected_class, 
                          quiz_status=quiz_status)
+
+@app.route('/siswa/class/<int:class_id>/pengumuman', methods=['GET'])
+def siswa_class_pengumuman(class_id):
+    # Mengambil informasi pengumuman berdasarkan ID kelas
+    pengumuman_list = Pengumuman.query.filter_by(id_kelas=class_id).all()
+    
+    # Mengambil informasi kelas yang dipilih
+    selected_class = kelas_ajar.query.get(class_id)
+
+    # Menentukan pesan untuk ditampilkan jika tidak ada pengumuman
+    no_pengumuman_message = None
+    if not pengumuman_list:
+        no_pengumuman_message = 'Belum ada pengumuman yang tersedia untuk kelas ini.'
+
+    return render_template('siswa/siswa_class_pengumuman.html', 
+                           pengumuman_list=pengumuman_list, 
+                           no_pengumuman_message=no_pengumuman_message, 
+                           selected_class=selected_class)
 
 @app.route('/siswa/dashboard_quiz', methods=['GET'])
 def dashboard_quiz():

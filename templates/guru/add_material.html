@@ -15,8 +15,11 @@ Tambah Materi
                 <ol class="breadcrumb float-sm-right">
                     <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Home</a></li>
                     <li class="breadcrumb-item"><a href="{{ url_for('guru_dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{ selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('class_materials', class_id=selected_class.id_kelas) }}">Materi</a></li>
+                    <li class="breadcrumb-item"><a
+                            href="{{ url_for('class_detail', class_id=selected_class.id_kelas) }}">{{
+                            selected_class.kelas }} - {{ selected_class.nama_mapel }}</a></li>
+                    <li class="breadcrumb-item"><a
+                            href="{{ url_for('class_materials', class_id=selected_class.id_kelas) }}">Materi</a></li>
                     <li class="breadcrumb-item active">Tambah Materi</li>
                 </ol>
             </div>
@@ -36,7 +39,8 @@ Tambah Materi
                         <form action="" method="post" enctype="multipart/form-data">
                             <div class="form-group">
                                 <label for="nama_materi">Nama Materi</label>
-                                <input type="text" name="nama_materi" id="nama_materi" class="form-control" placeholder="Masukkan nama materi" required>
+                                <input type="text" name="nama_materi" id="nama_materi" class="form-control"
+                                    placeholder="Masukkan nama materi" required>
                             </div>
                             <div class="form-group">
                                 <label for="file_materi">File Materi</label>
@@ -44,7 +48,8 @@ Tambah Materi
                             </div>
                             <div class="form-group text-right">
                                 <button type="submit" class="btn btn-success">Simpan</button>
-                                <a href="{{ url_for('class_materials', class_id=selected_class.id_kelas) }}" class="btn btn-secondary">Batal</a>
+                                <a href="{{ url_for('class_materials', class_id=selected_class.id_kelas) }}"
+                                    class="btn btn-secondary">Batal</a>
                             </div>
                         </form>
                     </div>
