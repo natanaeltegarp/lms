@@ -1,11 +1,17 @@
 {% extends 'siswa/kelas_tempplate.html' %}
 
 {% block content %}
-<div class="content-header bg-primary text-white py-4">
-    <div class="container">
-        <div class="row justify-content-between">
-            <div class="col-auto">
-                <h1 class="h3">Materi Kelas {{ selected_class.nama_kelas }}</h1>
+<div class="content-header" style="background-color: #f8f9fa;">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Materi Kelas</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="{{ url_for('siswa_dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item active">Materi Kelas</li>
+                </ol>
             </div>
         </div>
     </div>

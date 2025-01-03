@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime
+import pytz
 import psycopg2 
 import psycopg2.extras
 import secrets
@@ -14,7 +15,7 @@ import csv
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/lms2'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
@@ -23,7 +24,7 @@ db = SQLAlchemy(app)
 DB_HOST = "localhost"
 DB_NAME = "lms2"
 DB_USER = "postgres"
-DB_PASS = "postgres"
+DB_PASS = "Indonesia09"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -790,50 +791,56 @@ def siswa_quiz_detail(class_id, quiz_id):
 
     if request.method == 'POST':
         try:
-            current_time = datetime.now()
-            
-            # Validate deadline if it exists
-            if selected_quiz.batas_waktu and current_time > selected_quiz.batas_waktu:
-                flash('Maaf, batas waktu pengumpulan kuis telah berakhir', 'danger')
-                return redirect(url_for('siswa_class_quizzes', class_id=class_id))
-            
-            # Process student's answers
+            # Gunakan timezone-aware datetime untuk perbandingan
+            local_tz = pytz.timezone("Asia/Jakarta")
+            current_time = datetime.now(local_tz)  # waktu sekarang dengan zona waktu
+
+            # Pastikan batas waktu kuis adalah timezone-aware (gunakan UTC atau zona waktu yang sesuai)
+            if selected_quiz.batas_waktu:
+                selected_quiz_batas_waktu = selected_quiz.batas_waktu.astimezone(local_tz)  # Konversi ke zona waktu yang sesuai
+
+                # Bandingkan waktu hanya jika batas waktu ada
+                if current_time > selected_quiz_batas_waktu:
+                    flash('Maaf, batas waktu pengumpulan kuis telah berakhir', 'danger')
+                    return redirect(url_for('siswa_class_quizzes', class_id=class_id))
+
+            # Proses jawaban dengan validasi
             for soal in soal_list:
                 jawaban_text = request.form.get(f'jawaban_{soal.id_soal}')
-                if jawaban_text:
-                    # Check if answer already exists for this user
-                    existing_jawaban = Jawaban.query.filter_by(
-                        id_user=user_id,
-                        id_soal=soal.id_soal
-                    ).first()
-                    
-                    if existing_jawaban:
-                        # Update existing answer
-                        existing_jawaban.jawaban = jawaban_text
-                        existing_jawaban.waktu_submit = current_time
-                    else:
-                        # Create new answer
-                        new_jawaban = Jawaban(
-                            id_user=user_id,
-                            id_soal=soal.id_soal,
-                            jawaban=jawaban_text,
-                            waktu_submit=current_time
-                        )
-                        db.session.add(new_jawaban)
-            
-            db.session.commit()
-            
-            if has_submitted:
-                flash('Jawaban Anda berhasil diperbarui!', 'success')
-            else:
-                flash('Jawaban Anda berhasil dikirim!', 'success')
                 
-            return redirect(url_for('siswa_quiz_detail', class_id=class_id, quiz_id=quiz_id))
-            
+                # Pastikan jawaban tidak kosong dan valid
+                if not jawaban_text or not isinstance(jawaban_text, str) or len(jawaban_text.strip()) == 0:
+                    flash(f"Jawaban untuk soal {soal.id_soal} tidak valid", 'danger')
+                    return redirect(url_for('siswa_quiz_detail', class_id=class_id, quiz_id=quiz_id))
+
+                # Cek apakah jawaban sudah ada atau belum
+                existing_jawaban = Jawaban.query.filter_by(
+                    id_user=user_id,
+                    id_soal=soal.id_soal
+                ).first()
+
+                if existing_jawaban:
+                    flash('Jawaban hanya bisa dikirimkan sekali.', 'danger')
+                    return redirect(url_for('siswa_class_quizzes', class_id=class_id))  # Kembali ke halaman quiz jika sudah submit
+
+                # Jika belum ada jawaban, buat jawaban baru
+                new_jawaban = Jawaban(
+                    id_user=user_id,
+                    id_soal=soal.id_soal,
+                    jawaban=jawaban_text,
+                    waktu_submit=current_time
+                )
+                db.session.add(new_jawaban)
+
+            db.session.commit()
+            flash('Jawaban Anda berhasil dikirim!', 'success')
+            return redirect(url_for('siswa_class_quizzes', class_id=class_id))  # Kembali ke daftar kuis
+
         except Exception as e:
             db.session.rollback()
+            app.logger.error(f"Error occurred while committing answers: {str(e)}")  # Log error
             flash('Terjadi kesalahan saat menyimpan jawaban. Silakan coba lagi.', 'danger')
-            print(f"Error: {str(e)}")  # For debugging
+            return redirect(url_for('siswa_quiz_detail', class_id=class_id, quiz_id=quiz_id))
 
     # Format last submission time for display
     formatted_last_submission = last_submission.strftime("%d %B %Y %H:%M:%S") if last_submission else None
