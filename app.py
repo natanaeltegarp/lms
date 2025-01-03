@@ -568,16 +568,24 @@ def quiz_answer(class_id, quiz_id):
 @app.route('/guru/class/<int:class_id>/quizzes/<int:quiz_id>/answers/grade', methods=['POST'])
 def answer_grade(quiz_id, class_id):
     soal_list = Soal.query.filter_by(id_kuis=quiz_id).all()
-    jawaban_list = db.session.query(Jawaban, User).join(User,Jawaban.id_user == User.id).filter(Jawaban.id_soal.in_([Soal.id_soal for soal in soal_list])).all()
-    
+    jawaban_list = db.session.query(Jawaban, Soal).join(Soal, Jawaban.id_soal == Soal.id_soal).filter(
+        Soal.id_kuis == quiz_id
+    ).all()
     csv_file = f'temp_answers_{quiz_id}.csv'
-    csv_filepath = os.path.join('static/uploads/temp', csv_file)
+    csv_filepath = os.path.join('static/uploads/temp/', csv_file)
     os.makedirs(os.path.dirname(csv_filepath), exist_ok=True)
+
+    with open(csv_filepath, mode='w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        # Tulis header CSV
+        writer.writerow(['id_jawaban', 'id_soal', 'kunci_jawaban', 'jawaban'])
+        # Tulis data jawaban
+        for jawaban, soal in jawaban_list:
+            writer.writerow([jawaban.id_jawaban, soal.id_soal, soal.kunci_jawaban, jawaban.jawaban])
 
     try:
         with open(csv_filepath, 'rb') as f:
-            #back-end belum dibuat; isi dengan
-            response = request.post('http://', files={'file':f})
+            response = requests.post('http://127.0.0.1:5001/evaluate', files={'file':f})
         if response.status_code == 200:
             result = response.json()
             for id_jawaban, nilai in result.items():

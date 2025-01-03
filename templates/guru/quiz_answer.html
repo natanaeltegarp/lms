@@ -45,19 +45,19 @@ Dashboard
                                 </tr>
                             </thead>
                             <tbody>
+                            {% if jawaban_list %}
                                 {% for jawaban, siswa in jawaban_list if jawaban.id_soal == soal.id_soal %}
-                                    {% set jawaban_ada = true %}
                                     <tr>
                                         <td>{{ siswa.fullname }}</td>
                                         <td>{{ jawaban.jawaban }}</td>
                                         <td>{{ jawaban.nilai or "Belum dinilai" }}</td>
                                     </tr>
                                 {% endfor %}
-                                {% if not jawaban_ada %}
+                            {% else %}
                                     <tr>
                                         <td colspan="2" class="text-center text-muted">Belum ada jawaban untuk soal ini</td>
                                     </tr>
-                                {% endif %}
+                            {% endif %}
                             </tbody>
                         </table>
                     </div>
