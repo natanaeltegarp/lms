@@ -15,16 +15,16 @@ import csv
 
 app = Flask(__name__)
 app.secret_key = 'excel-coba-kp'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:Indonesia09@localhost:5432/lms2'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/lms'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 
 db = SQLAlchemy(app)
 
 DB_HOST = "localhost"
-DB_NAME = "lms2"
+DB_NAME = "lms"
 DB_USER = "postgres"
-DB_PASS = "Indonesia09"
+DB_PASS = "postgres"
 
 def get_db_connection():
     return psycopg2.connect(dbname=DB_NAME, user=DB_USER, password=DB_PASS, host=DB_HOST)
@@ -646,7 +646,7 @@ def delete_question(class_id, quiz_id, question_id):
         db.session.rollback()
         flash(f'Terjadi kesalahan saat menghapus soal: {str(e)}', 'danger')
     
-    return redirect(url_for('quiz_detail', class_id=class_id, quiz_id=quiz_id))
+    return redirect(url_for('quiz_edit', class_id=class_id, quiz_id=quiz_id))
 
 @app.route('/guru/class/<int:class_id>/enrollment')
 def class_enrollments(class_id):
@@ -658,14 +658,11 @@ def class_enrollments(class_id):
 @app.route('/guru/class/<int:class_id>/<int:user_id>/enrollment', methods=['POST'])
 def delete_enrollment(class_id, user_id):
     selected_class = kelas_ajar.query.get_or_404(class_id)
-    if selected_class.id_guru != session['id']:
-        flash("Anda tidak memiliki izin untuk menghapus peserta ini.", "danger")
-        return redirect(url_for('class_enrollments', class_id=class_id))
     
-    enrollment = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
+    student = enrollment.query.filter_by(id_kelas=class_id, id_user=user_id).first()
     
-    if enrollment:
-        db.session.delete(enrollment)
+    if student:
+        db.session.delete(student)
         db.session.commit()
         flash('Peserta berhasil dihapus', 'success')
     else:

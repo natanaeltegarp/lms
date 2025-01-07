@@ -34,7 +34,7 @@ Dashboard
                     <div class="card-header bg-primary text-white">
                         <h5 class="card-title">Soal: {{ soal.pertanyaan }}</h5>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
                         {% set jawaban_ada = false %}
                         <table class="table table-bordered table-striped">
                             <thead class="thead-dark">
@@ -62,12 +62,12 @@ Dashboard
                         </table>
                     </div>
                 </div>
-                <form action="{{ url_for('answer_grade', quiz_id=selected_quiz.id_kuis, class_id=selected_class.id_kelas) }}" method="post">
-                    <button type="submit" class="btn btn-primary">Nilai Semua Jawaban</button>
-                </form>
                 {% else %}
                 <p class="text-center text-muted">Belum ada soal yang tersedia.</p>
                 {% endfor %}
+                <form action="{{ url_for('answer_grade', quiz_id=selected_quiz.id_kuis, class_id=selected_class.id_kelas) }}" method="post">
+                    <button type="submit" class="btn btn-primary">Nilai Semua Jawaban</button>
+                </form>
                 
                 <a href="{{ url_for('quiz_detail', class_id=selected_quiz.id_kelas, quiz_id=selected_quiz.id_kuis) }}" class="btn btn-secondary mt-3">Kembali</a>
             </div>
