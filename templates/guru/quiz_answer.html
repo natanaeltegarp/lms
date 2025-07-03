@@ -65,7 +65,7 @@ Dashboard
                 {% else %}
                 <p class="text-center text-muted">Belum ada soal yang tersedia.</p>
                 {% endfor %}
-                <form action="{{ url_for('answer_grade', quiz_id=selected_quiz.id_kuis, class_id=selected_class.id_kelas) }}" method="post">
+                <form id="grade-form" action="{{ url_for('answer_grade', quiz_id=selected_quiz.id_kuis, class_id=selected_class.id_kelas) }}" method="post">
                     <button type="submit" class="btn btn-primary">Nilai Semua Jawaban</button>
                 </form>
                 
@@ -74,4 +74,26 @@ Dashboard
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4">
+      <div class="modal-body">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <p class="mt-3 mb-0">Menilai jawaban... Mohon tunggu.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const gradeForm = document.getElementById('grade-form');
+        if (gradeForm) {
+            gradeForm.addEventListener('submit', function () {
+                const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+                loadingModal.show();
+            });
+        }
+    });
+</script>
 {% endblock %}
